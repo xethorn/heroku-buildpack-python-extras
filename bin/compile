@@ -209,14 +209,7 @@ puts-step "Installing dependencies using pip version $(pip --version | awk '{pri
 pip install --use-mirrors -r requirements.txt --exists-action=w --src=./.heroku/src | indent
 
 # Install required gems if there's a Gemfile.
-if [ -f "$BUILD_DIR/Gemfile.lock" ]; then
-  puts-step "FOUND A GEMFILE"
-else
-  puts-step "DID NOT FIND A GEMFILE"
-fi
-
-if [ -f "$BUILD_DIR/Gemfile.lock" ] && [ ! "$DISABLE_BUNDLER" ]; then
-  puts-step "BUNDLER!!"
+if [ -f Gemfile.lock ] && [ ! "$DISABLE_BUNDLER" ]; then
   source $BIN_DIR/steps/bundler
 fi
 
