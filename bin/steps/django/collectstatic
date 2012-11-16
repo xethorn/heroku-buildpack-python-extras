@@ -2,18 +2,16 @@
 
 set +e
 
-env
-
 # Check if collectstatic is configured properly.
-python $MANAGE_FILE collectstatic --dry-run --noinput
+python $MANAGE_FILE collectstatic --dry-run --noinput &> /dev/null && RUN_COLLECTSTATIC=true
 
 # Compile assets if collectstatic appears to be kosher.
-# if [ "$RUN_COLLECTSTATIC" ]; then
-puts-step "Collecting static files"
-python $MANAGE_FILE collectstatic --noinput  2>&1 | sed '/^Copying/d;/^$/d;/^ /d' | indent
+if [ "$RUN_COLLECTSTATIC" ]; then
+  puts-step "Collecting static files"
+  python $MANAGE_FILE collectstatic --noinput  2>&1 | sed '/^Copying/d;/^$/d;/^ /d' | indent
 
-[ $? -ne 0 ] && {
-  puts-warn "Error running manage.py collectstatic. More info:"
-  echo "http://devcenter.heroku.com/articles/django-assets" | indent
-}
-# fi
+  [ $? -ne 0 ] && {
+    puts-warn "Error running manage.py collectstatic. More info:"
+    echo "http://devcenter.heroku.com/articles/django-assets" | indent
+  }
+fi

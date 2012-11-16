@@ -27,6 +27,6 @@ if [ ! "$DISABLE_INJECTION" ]; then
 fi
 
 if [ ! "$DISABLE_COLLECTSTATIC" ]; then
-  puts-step "collectstatic"
   source $BIN_DIR/steps/django/collectstatic
 fi
+
