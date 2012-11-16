@@ -2,6 +2,8 @@
 
 set +e
 
+env
+
 # Check if collectstatic is configured properly.
 python $MANAGE_FILE collectstatic --dry-run --noinput
 
