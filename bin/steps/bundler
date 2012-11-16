@@ -1,25 +1,24 @@
 #!/usr/bin/env bash
 
 RUBY_DIR="$BUILD_DIR/.heroku/ruby"
-RUBY_BIN="$RUBY_DIR/bin"
 VENDOR_DIR="$RUBY_DIR/bundle/ruby/1.9.1"
 RUBY_VENDOR_URL="https://s3.amazonaws.com/heroku-buildpack-ruby"
 BUNDLER_VERSION="1.2.1"
 BUNDLER_GEM_PATH="bundler-$BUNDLER_VERSION"
 
 # Make our sandbox dir
-mkdir -p $RUBY_DIR
+mkdir -p $VENDOR_DIR
 
 # Install Bundler
 CURRENT_DIR=$(pwd)
-cd $RUBY_DIR
+cd $VENDOR_DIR
 curl "$RUBY_VENDOR_URL/$BUNDLER_GEM_PATH.tgz" -s -o - | tar xzf -
 cd $CURRENT_DIR
 
 # Run Bundler to install dependencies
 puts-step "Installing gem dependencies using bundler version $BUNDLER_VERSION"
 BUNDLE_WITHOUT=${BUNDLE_WITHOUT:-"development:test"}
-$RUBY_BIN/bundle install --without $BUNDLE_WITHOUT --path $RUBY_DIR/bundle --binstubs $RUBY_BIN | indent
+$VENDOR_DIR/bin/bundle install --without $BUNDLE_WITHOUT --path $RUBY_DIR/bundle --binstubs $RUBY_DIR/bin | indent
 
 # Setup for a Ruby specific profile.d
 RUBY_PROFILE_PATH="$BUILD_DIR/.profile.d/ruby.sh"
@@ -35,6 +34,6 @@ function set-rb-env-default () {
   echo "export $1=\${$1:-$2}" >> $RUBY_PROFILE_PATH
 }
 
-set-rb-env-overide PATH "$RUBY_BIN/bin:$PATH"
+set-rb-env-overide PATH "$RUBY_DIR/bin:$VENDOR_DIR/bin:$PATH"
 set-rb-env-default GEM_HOME $VENDOR_DIR
 set-rb-env-default GEM_PATH $VENDOR_DIR
