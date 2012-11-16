@@ -23,7 +23,7 @@ export GEM_PATH=$VENDOR_DIR
 # Run Bundler to install dependencies
 puts-step "Installing gem dependencies using bundler version $BUNDLER_VERSION"
 BUNDLE_WITHOUT=${BUNDLE_WITHOUT:-"development:test"}
-$VENDOR_DIR/bin/bundle install --without $BUNDLE_WITHOUT --path $RUBY_DIR/bundle --binstubs $RUBY_DIR/bin | indent
+bundle install --without $BUNDLE_WITHOUT --path $RUBY_DIR/bundle --binstubs $RUBY_DIR/bin --deployment | indent
 
 # Setup for a Ruby specific profile.d
 RUBY_PROFILE_PATH="$BUILD_DIR/.profile.d/ruby.sh"

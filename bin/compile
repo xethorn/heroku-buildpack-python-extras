@@ -45,7 +45,7 @@ CACHE_DIR=$2
 NAME=$($BIN_DIR/detect $BUILD_DIR)
 
 # Where to store the Pip download cache.
-CACHED_DIRS=".heroku"
+CACHED_DIRS=(".heroku" ".bundle")
 PIP_DOWNLOAD_CACHE=${PIP_DOWNLOAD_CACHE:-$CACHE_DIR/pip_downloads}
 
 # Static configurations for virtualenv caches.
