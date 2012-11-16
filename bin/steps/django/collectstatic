@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+puts-step "steps/django/collectstatic"
 set +e
 
 # Syntax sugar.
