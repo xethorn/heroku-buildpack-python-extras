@@ -1,45 +1,45 @@
-Heroku buildpack: Python
-========================
+Heroku buildpack: Python Extras
+===============================
 
-This is a [Heroku buildpack](http://devcenter.heroku.com/articles/buildpacks) for Python apps.
-It uses [virtualenv](http://www.virtualenv.org/) and [pip](http://www.pip-installer.org/).
+This is a [Heroku buildpack](http://devcenter.heroku.com/articles/buildpacks) for Python apps with added support for Gem and Node package dependencies.
 
-[![Build Status](https://secure.travis-ci.org/heroku/heroku-buildpack-python.png?branch=master)](http://travis-ci.org/heroku/heroku-buildpack-python)
+It uses:
+
+* [virtualenv](http://www.virtualenv.org/)
+* [pip](http://www.pip-installer.org/)
+* [bundler](http://gembundler.com/)
+* [npm](https://npmjs.org/) (Coming soon...)
 
 Usage
 -----
 
 Example usage:
 
-    $ ls
-    Procfile  requirements.txt  web.py
-
-    $ heroku create --stack cedar --buildpack git://github.com/heroku/heroku-buildpack-python.git
-
-    $ git push heroku master
-    ...
-    -----> Heroku receiving push
-    -----> Fetching custom build pack... done
-    -----> Python app detected
-    -----> Preparing virtualenv version 1.6.4
-           New python executable in ./bin/python
-           Installing setuptools............done.
-           Installing pip...............done.
-    -----> Installing dependencies using pip version 1.0.2
-           Downloading/unpacking Flask==0.7.2 (from -r requirements.txt (line 1))
-           Downloading/unpacking Werkzeug>=0.6.1 (from Flask==0.7.2->-r requirements.txt (line 1))
-           Downloading/unpacking Jinja2>=2.4 (from Flask==0.7.2->-r requirements.txt (line 1))
-           Installing collected packages: Flask, Werkzeug, Jinja2
-           Successfully installed Flask Werkzeug Jinja2
-           Cleaning up...
+``` bash
+$ ls
+Procfile  requirements.txt  Gemfile Gemfile.lock web.py
+$ heroku create --buildpack git://github.com/LocalMed/heroku-buildpack-python-extras.git
+$ git push heroku master
+-----> Heroku receiving push
+-----> Fetching custom build pack... done
+-----> Python app detected
+-----> Preparing virtualenv version 1.7.2
+       ...
+-----> Installing dependencies using pip version 1.1
+       ...
+-----> Installing gem dependencies using bundler version 1.2.1
+       ...
+```
 
 You can also add it to upcoming builds of an existing application:
 
-    $ heroku config:add BUILDPACK_URL=git://github.com/heroku/heroku-buildpack-python.git
+    $ heroku config:add BUILDPACK_URL=git://github.com/LocalMed/heroku-buildpack-python-extras.git
 
 The buildpack will detect your app as Python if it has the file `requirements.txt` in the root. It will detect your app as Python/Django if there is an additional `settings.py` in a project subdirectory.
 
 It will use virtualenv and pip to install your dependencies, vendoring a copy of the Python runtime into your slug.  The `bin/`, `include/` and `lib/` directories will be cached between builds to allow for faster pip install time.
+
+It will also detect gem dependencies (maybe you're using Sass) and install them using bundler.
 
 Hacking
 -------
