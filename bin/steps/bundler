@@ -15,6 +15,10 @@ cd $VENDOR_DIR
 curl "$RUBY_VENDOR_URL/$BUNDLER_GEM_PATH.tgz" -s -o - | tar xzf -
 cd $CURRENT_DIR
 
+# Setup environment
+GEM_HOME=$VENDOR_DIR
+GEM_PATH=$VENDOR_DIR
+
 # Run Bundler to install dependencies
 puts-step "Installing gem dependencies using bundler version $BUNDLER_VERSION"
 BUNDLE_WITHOUT=${BUNDLE_WITHOUT:-"development:test"}
@@ -35,5 +39,5 @@ function set-rb-env-default () {
 }
 
 set-rb-env-overide PATH "$RUBY_DIR/bin:$VENDOR_DIR/bin:$PATH"
-set-rb-env-default GEM_HOME $VENDOR_DIR
-set-rb-env-default GEM_PATH $VENDOR_DIR
+set-rb-env-default GEM_HOME $GEM_HOME
+set-rb-env-default GEM_PATH $GEM_PATH
