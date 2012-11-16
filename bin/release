@@ -17,6 +17,7 @@ config_vars:
   PYTHONHOME: /app/.heroku/venv/
   PYTHONPATH: /app/
   GEM_PATH: /app/.heroku/ruby/bundle/ruby/1.9.1
+  GEM_HOME: /app/.heroku/ruby/bundle/ruby/1.9.1
 EOF
 
 
