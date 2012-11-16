@@ -2,10 +2,10 @@
 
 RUBY_DIR="$BUILD_DIR/.heroku/ruby"
 RUBY_BIN="$RUBY_DIR/bin"
+VENDOR_DIR="$RUBY_DIR/bundle/ruby/1.9.1"
 RUBY_VENDOR_URL="https://s3.amazonaws.com/heroku-buildpack-ruby"
 BUNDLER_VERSION="1.2.1"
 BUNDLER_GEM_PATH="bundler-$BUNDLER_VERSION"
-SLUG_VENDOR_BASE=$RUBY_DIR/$(ruby -e 'require "rbconfig"; puts "bundle/#{RUBY_ENGINE}/#{RbConfig::CONFIG["ruby_version"]}"')
 
 # Make our sandbox dir
 mkdir -p $RUBY_DIR
@@ -35,7 +35,6 @@ function set-rb-env-default () {
   echo "export $1=\${$1:-$2}" >> $RUBY_PROFILE_PATH
 }
 
-set-rb-env-overide PATH "$RUBY_BIN/bin:$SLUG_VENDOR_BASE/bin:$PATH"
-set-rb-env-default GEM_HOME $SLUG_VENDOR_BASE
-set-rb-env-default GEM_PATH $SLUG_VENDOR_BASE
-
+set-rb-env-overide PATH "$RUBY_BIN/bin:$PATH"
+set-rb-env-default GEM_HOME $VENDOR_DIR
+set-rb-env-default GEM_PATH $VENDOR_DIR
