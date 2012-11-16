@@ -179,8 +179,8 @@ OUT=$(virtualenv --python $PYTHON_EXE --distribute --never-download --prompt='(v
 
 [ $? -ne 0 -o -n "$CLEAN_VIRTUALENV" ] && {
   if [ -n "$CLEAN_VIRTUALENV" ]
-    then echo " !     CLEAN_VIRTUALENV set, rebuilding virtualenv."
-    else echo " !     Virtualenv corrupt, rebuilding."
+    then puts-warn "CLEAN_VIRTUALENV set, rebuilding virtualenv."
+    else puts-warn "Virtualenv corrupt, rebuilding."
   fi
   for dir in $VIRTUALENV_DIRS; do
     rm -fr $dir &> /dev/null || true
@@ -209,7 +209,14 @@ puts-step "Installing dependencies using pip version $(pip --version | awk '{pri
 pip install --use-mirrors -r requirements.txt --exists-action=w --src=./.heroku/src | indent
 
 # Install required gems if there's a Gemfile.
-if [ -f Gemfile.lock ] && [ ! "$DISABLE_BUNDLER" ]; then
+if [ -f "$BUILD_DIR/Gemfile.lock" ]; then
+  puts-step "FOUND A GEMFILE"
+else
+  puts-step "DID NOT FIND A GEMFILE"
+fi
+
+if [ -f "$BUILD_DIR/Gemfile.lock" ] && [ ! "$DISABLE_BUNDLER" ]; then
+  puts-step "BUNDLER!!"
   source $BIN_DIR/steps/bundler
 fi
 
@@ -224,7 +231,7 @@ fi
 
 # Make Virtualenv's paths relative for portability.
 set +e
-OUT=$(virtualenv --python $PYTHON_EXE  --relocatable $VIRTUALENV_LOC)
+OUT=$(virtualenv --python $PYTHON_EXE --relocatable $VIRTUALENV_LOC)
 [ $? -ne 0 ] && {
   puts-warn "Error making virtualenv relocatable"
   echo "$OUT" | indent
