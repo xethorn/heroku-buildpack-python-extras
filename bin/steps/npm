@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+NODE_DIR="$BUILD_DIR/.heroku/node"
+NODE_VERSION="0.4.7"
+NPM_VERSION="1.0.106"
+INCLUDE_PATH="$NODE_DIR/include"
+NODE_PROFILE_PATH="$BUILD_DIR/.profile.d/node.sh"
+
+PATH="$NODE_DIR/bin:$PATH"
+export CPATH="$INCLUDE_PATH"
+export CPPPATH="$INCLUDE_PATH"
+
+# Let's get started...
+puts-step "Installing node packages using npm version $NPM_VERSION"
+
+# Install Node and NPM
+echo "Installing node..." | indent
+package-download "nodejs" "nodejs" "$NODE_VERSION" "$NODE_DIR"
+echo "Installing npm..." | indent
+package-download "nodejs" "npm" "$NPM_VERSION" "$NODE_DIR"
+
+# Install dependencies with npm
+HOME="$BUILD_DIR" $NODE_DIR/bin/node $NODE_DIR/cli.js install --production 2>&1 | indent
+
+# Setup runtime env
+mkdir -p $(dirname $NODE_PROFILE_PATH)
+set-env-override PATH 'node_modules/.bin:$PATH' "$NODE_PROFILE_PATH"

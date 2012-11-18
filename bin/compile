@@ -87,14 +87,26 @@ function puts-warn (){
   echo " !     $@"
 }
 
-# Usage: $ set-env key value
-function set-env (){
-  echo "export $1=$2" >> $PROFILE_PATH
+# Usage: $ set-env-override key value
+function set-env-override (){
+  echo "export $1=$2" >> ${3:-$PROFILE_PATH}
 }
 
-# Usage: $ set-default-env key value
-function set-default-env (){
-  echo "export $1=\${$1:-$2}" >> $PROFILE_PATH
+# Usage: $ set-env-default key value
+function set-env-default (){
+  echo "export $1=\${$1:-$2}" >> ${3:-$PROFILE_PATH}
+}
+
+# Usage: $ package-download buildpack engine version location
+function package-download (){
+  BUILDPACK="$1"
+  ENGINE="$2"
+  VERSION="$3"
+  LOCATION="$4"
+  PACKAGE="http://s3.amazonaws.com/heroku-buildpack-$BUILDPACK/$ENGINE-$VERSION.tgz"
+
+  mkdir -p $LOCATION
+  curl $PACKAGE -s -o - | tar xzf - -C $LOCATION
 }
 
 # ## Build Time
@@ -213,6 +225,11 @@ if [ -f Gemfile.lock ] && [ ! "$DISABLE_BUNDLER" ]; then
   source $BIN_DIR/steps/bundler
 fi
 
+# Install required node packages if there's a package.json
+if [ -f package.json ] && [ ! "$DISABLE_NPM" ]; then
+  source $BIN_DIR/steps/npm
+fi
+
 # Do additional application hackery if applications appears to be a Django app.
 # Optionally, disable all Django-specific changes with `DISABLE_INJECTION` env.
 #
@@ -242,15 +259,14 @@ for dir in $CACHED_DIRS; do
 done
 
 # Set context environment variables.
-
-set-env PATH '$HOME/.heroku/venv/bin:$PATH'
-set-default-env PYTHONUNBUFFERED true
-set-default-env LIBRARY_PATH /app/.heroku/vendor/lib
-set-default-env LD_LIBRARY_PATH /app/.heroku/vendor/lib
-set-default-env LANG en_US.UTF-8
-set-default-env PYTHONHASHSEED random
-set-default-env PYTHONHOME /app/.heroku/venv/
-set-default-env PYTHONPATH /app/
+set-env-override PATH '$HOME/.heroku/venv/bin:$PATH'
+set-env-default PYTHONUNBUFFERED true
+set-env-default LIBRARY_PATH "/app/.heroku/vendor/lib"
+set-env-default LD_LIBRARY_PATH "/app/.heroku/vendor/lib"
+set-env-default LANG "en_US.UTF-8"
+set-env-default PYTHONHASHSEED "random"
+set-env-default PYTHONHOME "/app/.heroku/venv/"
+set-env-default PYTHONPATH "/app/"
 
 # ### Fin.
 
