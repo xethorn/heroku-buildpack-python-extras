@@ -9,5 +9,5 @@ if [ ! "$DISABLE_COLLECTSTATIC_DRYRUN" ]; then
 fi
 
 # Compile assets if collectstatic appears to be kosher.
-echo "Beginning collection..." | indent
-python $MANAGE_FILE collectstatic --noinput | sed '/^Copying/d;/^$/d;/^ /d' | indent
+echo "Copying files..." | indent
+python $MANAGE_FILE collectstatic --noinput | sed '/^Copying/d;/^Processing/d;/^$/d;/^ /d' | indent
