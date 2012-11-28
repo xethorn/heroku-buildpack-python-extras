@@ -5,13 +5,9 @@ puts-step "Collecting static files"
 # Check if collectstatic is configured properly.
 if [ ! "$DISABLE_COLLECTSTATIC_DRYRUN" ]; then
   echo "Checking configuration..." | indent
-  python $MANAGE_FILE collectstatic --dry-run --noinput &> /dev/null
+  python $MANAGE_FILE collectstatic --dry-run --noinput >/dev/null
 fi
 
 # Compile assets if collectstatic appears to be kosher.
-python $MANAGE_FILE collectstatic --noinput  2>&1 | sed '/^Copying/d;/^$/d;/^ /d' | indent
-
-[ $? -ne 0 ] && {
-  puts-warn "Error running manage.py collectstatic. More info:"
-  echo "http://devcenter.heroku.com/articles/django-assets" | indent
-}
+echo "Beginning collection..." | indent
+python $MANAGE_FILE collectstatic --noinput | sed '/^Copying/d;/^$/d;/^ /d' | indent
