@@ -28,13 +28,13 @@ function puts-warn (){
   echo " !     $@"
 }
 
-# Usage: $ set-env key value
-function set-env (){
+# Usage: $ set-env-override key value
+function set-env-override (){
   echo "export $1=$2" >> ${3:-$PROFILE_PATH}
 }
 
-# Usage: $ set-default-env key value
-function set-default-env (){
+# Usage: $ set-env-default key value
+function set-env-default (){
   echo "export $1=\${$1:-$2}" >> ${3:-$PROFILE_PATH}
 }
 
