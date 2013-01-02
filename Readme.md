@@ -8,7 +8,7 @@ It uses:
 * [virtualenv](http://www.virtualenv.org/)
 * [pip](http://www.pip-installer.org/)
 * [bundler](http://gembundler.com/)
-* [npm](https://npmjs.org/) (Coming soon...)
+* [npm](https://npmjs.org/)
 
 Usage
 -----
@@ -17,8 +17,8 @@ Example usage:
 
 ``` bash
 $ ls
-Procfile  requirements.txt  Gemfile Gemfile.lock web.py
-$ heroku create --buildpack git://github.com/LocalMed/heroku-buildpack-python-extras.git
+Procfile  requirements.txt  Gemfile  Gemfile.lock  web.py
+$ heroku create --buildpack git://github.com/localmed/heroku-buildpack-python-extras.git
 $ git push heroku master
 -----> Heroku receiving push
 -----> Fetching custom build pack... done
@@ -29,17 +29,25 @@ $ git push heroku master
        ...
 -----> Installing gem dependencies using bundler version 1.2.1
        ...
+-----> Installing node packages using npm version 1.0.106
+       ...
 ```
 
 You can also add it to upcoming builds of an existing application:
 
-    $ heroku config:add BUILDPACK_URL=git://github.com/LocalMed/heroku-buildpack-python-extras.git
+    $ heroku config:add BUILDPACK_URL=git://github.com/localmed/heroku-buildpack-python-extras.git
 
 The buildpack will detect your app as Python if it has the file `requirements.txt` in the root. It will detect your app as Python/Django if there is an additional `settings.py` in a project subdirectory.
 
-It will use virtualenv and pip to install your dependencies, vendoring a copy of the Python runtime into your slug.  The `bin/`, `include/` and `lib/` directories will be cached between builds to allow for faster pip install time.
+It will use virtualenv and pip to install your dependencies, vendoring a copy of the Python runtime into your slug. The `bin/`, `include/` and `lib/` directories will be cached between builds to allow for faster pip install time.
 
-It will also detect gem dependencies (maybe you're using Sass) and install them using bundler.
+### Gem Dependencies
+
+If your project contains a `Gemfile`, bundler will be used to install Gem dependencies.
+
+### Node Dependencies
+
+If your project contains a `package.json`, npm will be used install Node dependencies.
 
 Hacking
 -------
