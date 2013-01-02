@@ -41,9 +41,6 @@ ROOT_DIR=$(dirname $BIN_DIR)
 BUILD_DIR=$1
 CACHE_DIR=$2
 
-# The detected application type (`Python`|`Python/Django`).
-NAME=$($BIN_DIR/detect $BUILD_DIR)
-
 # Where to store the Pip download cache.
 CACHED_DIRS=(".heroku" ".bundle")
 PIP_DOWNLOAD_CACHE=${PIP_DOWNLOAD_CACHE:-$CACHE_DIR/pip_downloads}
@@ -54,7 +51,6 @@ MODERN_VIRTUALENV_LOC=".heroku/venv"
 LEGACY_VIRTUALENV_DIRS="bin include lib"
 LEGACY_VIRTUALENV_TRIGGER="lib/python2.7"
 PROFILE_PATH="$1/.profile.d/python.sh"
-
 
 # Python version. This will be used in the future to specify custom Pythons.
 PYTHON_VERSION="2.7.2"
@@ -67,47 +63,7 @@ unset GIT_DIR PYTHONHOME PYTHONPATH LD_LIBRARY_PATH LIBRARY_PATH
 export PIP_DOWNLOAD_CACHE BUILD_DIR CACHE_DIR BIN_DIR PROFILE_PATH
 
 # Syntax sugar.
-indent() {
-  RE="s/^/       /"
-  [ $(uname) == "Darwin" ] && sed -l "$RE" || sed -u "$RE"
-}
-
-# Virtualenv wrapper.
-function virtualenv (){
-  python "$ROOT_DIR/vendor/virtualenv-1.7.2/virtualenv.py" "$@"
-}
-
-# Buildpack Steps.
-function puts-step (){
-  echo "-----> $@"
-}
-
-# Buildpack Warnings.
-function puts-warn (){
-  echo " !     $@"
-}
-
-# Usage: $ set-env-override key value
-function set-env-override (){
-  echo "export $1=$2" >> ${3:-$PROFILE_PATH}
-}
-
-# Usage: $ set-env-default key value
-function set-env-default (){
-  echo "export $1=\${$1:-$2}" >> ${3:-$PROFILE_PATH}
-}
-
-# Usage: $ package-download buildpack engine version location
-function package-download (){
-  BUILDPACK="$1"
-  ENGINE="$2"
-  VERSION="$3"
-  LOCATION="$4"
-  PACKAGE="http://s3.amazonaws.com/heroku-buildpack-$BUILDPACK/$ENGINE-$VERSION.tgz"
-
-  mkdir -p $LOCATION
-  curl $PACKAGE -s -o - | tar xzf - -C $LOCATION
-}
+source $BIN_DIR/utils
 
 # ## Build Time
 #
@@ -131,7 +87,6 @@ fi
 # ### The Cache
 mkdir -p $CACHE_DIR
 [ ! "$(ls -A $CACHE_DIR)" ] && export FRESH_APP=1
-
 
 # Nice defaults.
 LEGACY_VIRTUALENV=false
@@ -161,17 +116,6 @@ fi
 for dir in $CACHED_DIRS; do
   cp -R $CACHE_DIR/$dir . &> /dev/null || true
 done
-
-set +e
-# Create set-aside `.heroku` folder.
-mkdir .heroku &> /dev/null
-HEROKU_DIR_STATUS=$?
-
-# TODO: This is a new app, disable injection.
-# [ $HEROKU_DIR_STATUS -eq 0 ] && {
-  #TODO: touch .heroku/injection_disabled
-# }
-set -e
 
 # Buildpack profile init script
 mkdir -p $(dirname $PROFILE_PATH)
@@ -212,31 +156,27 @@ puts-step "Activating virtualenv"
 source $VIRTUALENV_LOC/bin/activate
 
 # Install Mercurial if it appears to be required.
-if (grep -Fiq "hg+" requirements.txt) then
+if (in-req "hg+" requirements.txt) then
   pip install --use-mirrors mercurial | indent
 fi
 
 # Install dependencies with Pip.
 puts-step "Installing dependencies using pip version $(pip --version | awk '{print $2}')"
-pip install --use-mirrors -r requirements.txt --exists-action=w --src=./.heroku/src | indent
+pip install --use-mirrors -r requirements.txt --exists-action=w --src=./.heroku/srcmercurial | indent
 
 # Install required gems if there's a Gemfile.
 if [ -f Gemfile.lock ] && [ ! "$DISABLE_BUNDLER" ]; then
   source $BIN_DIR/steps/bundler
 fi
 
-# Install required node packages if there's a package.json
+# Install required node packages if there's a package.json.
 if [ -f package.json ] && [ ! "$DISABLE_NPM" ]; then
   source $BIN_DIR/steps/npm
 fi
 
-# Do additional application hackery if applications appears to be a Django app.
-# Optionally, disable all Django-specific changes with `DISABLE_INJECTION` env.
-#
-# See [`bin/steps/django`](django.html).
-
-if [ "$NAME" = "Python/Django" ]; then
-  source $BIN_DIR/steps/django/init
+# Run collectstatic if this is a Django app.
+if [ -f manage.py ] && [ ! "$DISABLE_COLLECTSTATIC" ]; then
+  source $BIN_DIR/steps/collectstatic
 fi
 
 # Make Virtualenv's paths relative for portability.
@@ -272,5 +212,3 @@ set-env-default PYTHONPATH "/app/"
 
 # Experimental post_compile hook.
 source $BIN_DIR/steps/hooks/post_compile
-
-# <a href="http://github.com/heroku/heroku-buildpack-python"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://d3nwyuy0nl342s.cloudfront.net/img/7afbc8b248c68eb468279e8c17986ad46549fb71/687474703a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub"></a>

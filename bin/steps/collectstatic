@@ -5,9 +5,9 @@ puts-step "Collecting static files"
 # Check if collectstatic is configured properly.
 if [ ! "$DISABLE_COLLECTSTATIC_DRYRUN" ]; then
   echo "Checking configuration..." | indent
-  python $MANAGE_FILE collectstatic --dry-run --noinput >/dev/null
+  python manage.py collectstatic --dry-run --noinput >/dev/null
 fi
 
 # Compile assets if collectstatic appears to be kosher.
 echo "Copying files..." | indent
-python $MANAGE_FILE collectstatic --noinput | sed '/^Copying/d;/^Processing/d;/^$/d;/^ /d' | indent
+python manage.py collectstatic --noinput | sed '/^Copying/d;/^Processing/d;/^$/d;/^ /d' | indent
