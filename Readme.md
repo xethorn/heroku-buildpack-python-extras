@@ -10,6 +10,11 @@ It uses:
 * [bundler](http://gembundler.com/)
 * [npm](https://npmjs.org/)
 
+Additional (optionally) included libraries:
+
+* [libmemcached](http://libmemcached.org/libMemcached.html)
+* [GEOS](http://trac.osgeo.org/geos/)
+
 Usage
 -----
 
@@ -25,6 +30,7 @@ $ git push heroku master
 -----> Python app detected
 -----> Preparing virtualenv version 1.7.2
        ...
+-----> Installing GEOS version 3.3.5
 -----> Installing dependencies using pip version 1.1
        ...
 -----> Installing gem dependencies using bundler version 1.2.1

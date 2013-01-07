@@ -14,51 +14,51 @@ pip-cleanup() {
 }
 
 # Virtualenv wrapper.
-function virtualenv (){
+function virtualenv() {
   python "$ROOT_DIR/vendor/virtualenv-1.7.2/virtualenv.py" "$@"
 }
 
 # Buildpack Steps.
-function puts-step (){
+function puts-step() {
   echo "-----> $@"
 }
 
 # Buildpack Warnings.
-function puts-warn (){
+function puts-warn() {
   echo " !     $@"
 }
 
 # Usage: $ set-env-override key value
-function set-env-override (){
+function set-env-override() {
   echo "export $1=$2" >> ${3:-$PROFILE_PATH}
 }
 
 # Usage: $ set-env-default key value
-function set-env-default (){
+function set-env-default() {
   echo "export $1=\${$1:-$2}" >> ${3:-$PROFILE_PATH}
 }
 
-# Usage: $ package-download buildpack engine version location
-function package-download (){
-  BUILDPACK="$1"
-  ENGINE="$2"
-  VERSION="$3"
-  LOCATION="$4"
-  PACKAGE="http://s3.amazonaws.com/heroku-buildpack-$BUILDPACK/$ENGINE-$VERSION.tgz"
+# Usage: $ package-download bucket engine version location
+function package-download() {
+  bucket="$1"
+  engine="$2"
+  version="$3"
+  location="$4"
+  package="http://s3.amazonaws.com/$bucket/$engine-$version.tgz"
 
-  mkdir -p $LOCATION
-  curl $PACKAGE -s -o - | tar xzf - -C $LOCATION
+  mkdir -p $location
+  curl $package -s -o - | tar xzf - -C $location
 }
 
 # Does some serious copying.
-function deep-cp (){
+function deep-cp() {
   find -H $1 -maxdepth 1 -name '.*' -a \( -type d -o -type f -o -type l \) -exec cp -a '{}' $2 \;
   cp -r $1/!(tmp) $2
   # echo copying $1 to $2
 }
 
 # Does some serious moving.
-function deep-mv (){
+function deep-mv() {
   deep-cp $1 $2
 
   rm -fr $1/!(tmp)
@@ -66,7 +66,7 @@ function deep-mv (){
 }
 
 # Recursively finds requirements.txt files
-function list-req (){
+function list-req() {
   echo $@
   for req in $(grep -Fie "-r " $@ | sed 's/-r //g')
     do
@@ -77,7 +77,7 @@ function list-req (){
 
 # Find pattern in requirements files recursively
 # Usage: $ in-req pattern file
-function in-req (){
+function in-req() {
   for file in $(list-req $2)
     do
       if (grep -Fiqe "$1" "$file") then

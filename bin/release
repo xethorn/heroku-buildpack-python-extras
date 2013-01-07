@@ -9,29 +9,26 @@ cat <<EOF
 ---
 config_vars:
   PATH: /app/.heroku/venv/bin:/app/.heroku/ruby/bin:/app/.heroku/node/bin:node_modules/.bin:/app/.heroku/ruby/bundle/ruby/1.9.1/bin:/bin:/usr/local/bin:/usr/bin
-  PYTHONUNBUFFERED: true
   LIBRARY_PATH: /app/.heroku/vendor/lib
   LD_LIBRARY_PATH: /app/.heroku/vendor/lib
-  LANG: en_US.UTF-8
-  PYTHONHASHSEED: random
+  GEOS_LIBRARY_PATH: /app/.heroku/vendor/lib/libgeos_c.so
   PYTHONHOME: /app/.heroku/venv/
   PYTHONPATH: /app/
+  PYTHONUNBUFFERED: true
+  PYTHONHASHSEED: random
   GEM_PATH: /app/.heroku/ruby/bundle/ruby/1.9.1
   GEM_HOME: /app/.heroku/ruby/bundle/ruby/1.9.1
+  LANG: en_US.UTF-8
 EOF
 
-
-[ "$NAME" = "Python/Django" ] || exit 0
-
-MANAGE_FILE=$(cd $BUILD_DIR && find . -maxdepth 3 -type f -name 'manage.py' | head -1)
-MANAGE_FILE=${MANAGE_FILE:2}
-PROJECT=$(dirname $MANAGE_FILE)
+# Add configuration for Django projects
+[ -f $BUILD_DIR/manage.py ] || exit 0
 
 cat <<EOF
 
 addons:
-  shared-database:5mb
+  shared-database: 5mb
 
 default_process_types:
-  web:      python $PROJECT/manage.py runserver 0.0.0.0:\$PORT --noreload
+  web: python manage.py runserver 0.0.0.0:\$PORT --noreload
 EOF

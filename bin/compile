@@ -40,6 +40,7 @@ BIN_DIR=$(cd $(dirname $0); pwd) # absolute path
 ROOT_DIR=$(dirname $BIN_DIR)
 BUILD_DIR=$1
 CACHE_DIR=$2
+PROFILE_DIR="$BUILD_DIR/.profile.d"
 
 # Where to store the Pip download cache.
 CACHED_DIRS=(".heroku" ".bundle")
@@ -50,7 +51,7 @@ LEGACY_VIRTUALENV_LOC="."
 MODERN_VIRTUALENV_LOC=".heroku/venv"
 LEGACY_VIRTUALENV_DIRS="bin include lib"
 LEGACY_VIRTUALENV_TRIGGER="lib/python2.7"
-PROFILE_PATH="$1/.profile.d/python.sh"
+PROFILE_PATH="$PROFILE_DIR/python.sh"
 
 # Python version. This will be used in the future to specify custom Pythons.
 PYTHON_VERSION="2.7.2"
@@ -120,7 +121,7 @@ done
 # Buildpack profile init script
 mkdir -p $(dirname $PROFILE_PATH)
 
-# ### Virtualenv Setup
+# ### virtualenv Setup
 #
 
 # Create the virtualenv. Rebuild if corrupt.
@@ -128,7 +129,7 @@ mkdir -p $(dirname $PROFILE_PATH)
 
 set +e
 puts-step "Preparing Python interpreter ($PYTHON_VERSION)"
-puts-step "Creating Virtualenv version $(virtualenv --version)"
+puts-step "Preparing virtualenv version $(virtualenv --version)"
 
 # Try to create the virtualenv.
 OUT=$(virtualenv --python $PYTHON_EXE --distribute --never-download --prompt='(venv) ' $VIRTUALENV_LOC 2>&1)
@@ -136,7 +137,7 @@ OUT=$(virtualenv --python $PYTHON_EXE --distribute --never-download --prompt='(v
 [ $? -ne 0 -o -n "$CLEAN_VIRTUALENV" ] && {
   if [ -n "$CLEAN_VIRTUALENV" ]
     then puts-warn "CLEAN_VIRTUALENV set, rebuilding virtualenv."
-    else puts-warn "Virtualenv corrupt, rebuilding."
+    else puts-warn "virtualenv corrupt, rebuilding."
   fi
   for dir in $VIRTUALENV_DIRS; do
     rm -fr $dir &> /dev/null || true
@@ -151,7 +152,12 @@ set -e
 # See [`bin/steps/pylibmc`](pylibmc.html).
 source $BIN_DIR/steps/pylibmc
 
-# Activate the Virtualenv.
+# Install GEOS for GeoDjango
+if [ ! "$DISABLE_GEOS" ]; then
+  source $BIN_DIR/steps/geos
+fi
+
+# Activate the virtualenv.
 puts-step "Activating virtualenv"
 source $VIRTUALENV_LOC/bin/activate
 
@@ -179,7 +185,7 @@ if [ -f manage.py ] && [ ! "$DISABLE_COLLECTSTATIC" ]; then
   source $BIN_DIR/steps/collectstatic
 fi
 
-# Make Virtualenv's paths relative for portability.
+# Make virtualenv's paths relative for portability.
 set +e
 OUT=$(virtualenv --python $PYTHON_EXE --relocatable $VIRTUALENV_LOC)
 [ $? -ne 0 ] && {
