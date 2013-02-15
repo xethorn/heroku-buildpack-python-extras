@@ -11,17 +11,17 @@ export GEM_HOME="$VENDOR_DIR"
 export GEM_PATH="$VENDOR_DIR"
 
 # Let's get started...
-puts-step "Installing gem dependencies using bundler version $BUNDLER_VERSION"
+puts_step "Installing gem dependencies using bundler version $BUNDLER_VERSION"
 
 # Install Bundler
 echo "Installing bundler..." | indent
-package-download heroku-buildpack-ruby bundler "$BUNDLER_VERSION" "$VENDOR_DIR"
+download_package heroku-buildpack-ruby bundler "$BUNDLER_VERSION" "$VENDOR_DIR"
 
 # Run Bundler to install dependencies
 bundle install --without "$BUNDLE_WITHOUT" --path "$RUBY_DIR/bundle" --binstubs "$RUBY_DIR/bin" --deployment | indent
 
 # Setup runtime env
 mkdir -p $(dirname $RUBY_PROFILE_PATH)
-set-env-override PATH "$RUBY_DIR/bin:$VENDOR_DIR/bin:\$PATH" "$RUBY_PROFILE_PATH"
-set-env-default GEM_HOME "$GEM_HOME" "$RUBY_PROFILE_PATH"
-set-env-default GEM_PATH "$GEM_PATH" "$RUBY_PROFILE_PATH"
+set_env_override PATH "$RUBY_DIR/bin:$VENDOR_DIR/bin:\$PATH" "$RUBY_PROFILE_PATH"
+set_env_default GEM_HOME "$GEM_HOME" "$RUBY_PROFILE_PATH"
+set_env_default GEM_PATH "$GEM_PATH" "$RUBY_PROFILE_PATH"

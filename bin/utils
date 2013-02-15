@@ -3,86 +3,85 @@
 shopt -s extglob
 
 # Syntax sugar.
-indent() {
-  RE="s/^/       /"
-  [ $(uname) == "Darwin" ] && sed -l "$RE" || sed -u "$RE"
+function indent() {
+    RE="s/^/       /"
+    [ $(uname) == "Darwin" ] && sed -l "$RE" || sed -u "$RE"
 }
 
 # Clean up pip output
-pip-cleanup() {
-  sed -e 's/\.\.\.\+/.../g' | sed -e '/already satisfied/d' | sed -e '/Overwriting/d' |  sed -e '/python executable/d' | sed -e '/no previously-included files/d'
+function cleanup_pip() {
+    sed -e 's/\.\.\.\+/.../g' | \
+        sed -e '/already satisfied/d' | \
+        sed -e '/Overwriting/d' |  \
+        sed -e '/python executable/d' | \
+        sed -e '/no previously-included files/d'
 }
 
 # Virtualenv wrapper.
 function virtualenv() {
-  python "$ROOT_DIR/vendor/virtualenv-1.7.2/virtualenv.py" "$@"
+    python "$ROOT_DIR/vendor/virtualenv-1.7.2/virtualenv.py" "$@"
 }
 
-# Buildpack Steps.
-function puts-step() {
-  echo "-----> $@"
+# Buildpack Steps. Usage:
+#
+#     $ puts_step "Step #1"
+#     -----> Step #1
+function puts_step() {
+    time_step
+    echo "-----> $@"
 }
 
-# Buildpack Warnings.
-function puts-warn() {
-  echo " !     $@"
+# Buildpack Warnings. Usage:
+#
+#     $ puts_warn "Some Warning!"
+#      !     Some Warning!
+function puts_warn() {
+    echo " !     $@"
 }
 
-# Usage: $ set-env-override key value
-function set-env-override() {
-  echo "export $1=$2" >> ${3:-$PROFILE_PATH}
+# Prints the elapsed time in seconds since the last time it was called if
+# longer than the threshold (10s). Usage:
+#
+#     $ time_step
+#     $ sleep 15
+#     $ time_step
+#     Elapsed time (in seconds): 15
+function time_step() {
+    if [[ -n "$DISABLE_TIME_STEPS" ]]; then
+        return
+    fi
+    if [[ -z "$TIME_SINCE_LAST_STEP" ]]; then
+        export TIME_SINCE_LAST_STEP=$(date +%s)
+        return
+    fi
+
+    local threshold=${TIME_STEPS_THRESHOLD:-10}
+    local current_time=$(date +%s)
+    local difference=$((current_time-TIME_SINCE_LAST_STEP))
+    export TIME_SINCE_LAST_STEP="$current_time"
+    if [[ "$difference" -gt "$threshold" ]]; then
+        echo "Elapsed time (in seconds): $difference" | indent
+    fi
 }
 
-# Usage: $ set-env-default key value
-function set-env-default() {
-  echo "export $1=\${$1:-$2}" >> ${3:-$PROFILE_PATH}
+# Usage: $ set_env_override key value
+function set_env_override() {
+    echo "export $1=$2" >> ${3:-$PROFILE_PATH}
 }
 
-# Usage: $ package-download bucket engine version location
-function package-download() {
-  bucket="$1"
-  engine="$2"
-  version="$3"
-  location="$4"
-  package="http://s3.amazonaws.com/$bucket/$engine-$version.tgz"
-
-  mkdir -p $location
-  curl $package -s -o - | tar xzf - -C $location
+# Usage: $ set_env_default key value
+function set_env_default() {
+    echo "export $1=\${$1:-$2}" >> ${3:-$PROFILE_PATH}
 }
 
-# Does some serious copying.
-function deep-cp() {
-  find -H $1 -maxdepth 1 -name '.*' -a \( -type d -o -type f -o -type l \) -exec cp -a '{}' $2 \;
-  cp -r $1/!(tmp) $2
-  # echo copying $1 to $2
-}
+# Usage: $ download_package bucket engine version location
+function download_package() {
+    bucket="$1"
+    engine="$2"
+    version="$3"
+    location="$4"
+    package="http://s3.amazonaws.com/$bucket/$engine-$version.tgz"
 
-# Does some serious moving.
-function deep-mv() {
-  deep-cp $1 $2
-
-  rm -fr $1/!(tmp)
-  find -H $1 -maxdepth 1 -name '.*' -a \( -type d -o -type f -o -type l \) -exec rm -fr '{}' \;
-}
-
-# Recursively finds requirements.txt files
-function list-req() {
-  echo $@
-  for req in $(grep -Fie "-r " $@ | sed 's/-r //g')
-    do
-      path="$(dirname $@)/$req"
-      list-req $path
-    done
-}
-
-# Find pattern in requirements files recursively
-# Usage: $ in-req pattern file
-function in-req() {
-  for file in $(list-req $2)
-    do
-      if (grep -Fiqe "$1" "$file") then
-        return 0
-      fi
-    done
-  return 1
+    mkdir -p $location
+    curl $package -s -o - | tar xzf - -C $location
 }

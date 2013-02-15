@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-puts-step "Collecting static files"
+puts_step "Collecting static files"
 
 # Check if collectstatic is configured properly.
 if [ ! "$DISABLE_COLLECTSTATIC_DRYRUN" ]; then
-  echo "Checking configuration..." | indent
-  python manage.py collectstatic --dry-run --noinput >/dev/null
+    echo "Checking configuration..." | indent
+    python manage.py collectstatic --dry-run --noinput >/dev/null
 fi
 
 # Compile assets if collectstatic appears to be kosher.

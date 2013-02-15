@@ -11,17 +11,17 @@ export CPATH="$INCLUDE_PATH"
 export CPPPATH="$INCLUDE_PATH"
 
 # Let's get started...
-puts-step "Installing node packages using npm version $NPM_VERSION"
+puts_step "Installing node packages using npm version $NPM_VERSION"
 
 # Install Node and NPM
 echo "Installing node..." | indent
-package-download heroku-buildpack-nodejs nodejs "$NODE_VERSION" "$NODE_DIR"
+download_package heroku-buildpack-nodejs nodejs "$NODE_VERSION" "$NODE_DIR"
 echo "Installing npm..." | indent
-package-download heroku-buildpack-nodejs npm "$NPM_VERSION" "$NODE_DIR"
+download_package heroku-buildpack-nodejs npm "$NPM_VERSION" "$NODE_DIR"
 
 # Install dependencies with npm
 HOME="$BUILD_DIR" $NODE_DIR/bin/node $NODE_DIR/cli.js install --production 2>&1 | indent
 
 # Setup runtime env
 mkdir -p $(dirname $NODE_PROFILE_PATH)
-set-env-override PATH 'node_modules/.bin:$PATH' "$NODE_PROFILE_PATH"
+set_env_override PATH 'node_modules/.bin:$PATH' "$NODE_PROFILE_PATH"
