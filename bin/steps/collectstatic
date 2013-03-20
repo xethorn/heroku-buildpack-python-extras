@@ -2,8 +2,9 @@
 
 puts_step "Collecting static files"
 
-echo $LIBRARY_PATH
-echo $LD_LIBRARY_PATH
+# Work around Heroku bug whereby pylibmc isn't availble during
+# compile phase. See: https://github.com/heroku/heroku-buildpack-python/issues/57
+export MEMCACHE_SERVERS='' MEMCACHIER_SERVERS=''
 
 # Check if collectstatic is configured properly.
 if [ ! "$DISABLE_COLLECTSTATIC_DRYRUN" ]; then
