@@ -2,6 +2,9 @@
 
 puts_step "Collecting static files"
 
+echo $LIBRARY_PATH
+echo $LD_LIBRARY_PATH
+
 # Check if collectstatic is configured properly.
 if [ ! "$DISABLE_COLLECTSTATIC_DRYRUN" ]; then
     echo "Checking configuration..." | indent
