@@ -44,6 +44,21 @@ export CACHE_DIR="$2"
 # Syntax sugar.
 source "$BIN_DIR/utils"
 
+# Directory Hacks for path consistiency.
+APP_DIR=${APP_DIR:-$HOME}
+TMP_APP_DIR="$CACHE_DIR/tmp_app_dir"
+
+# Copy Anvil app dir to temporary storage...
+mkdir -p "$TMP_APP_DIR"
+deep_mv "$APP_DIR" "$TMP_APP_DIR"
+
+# Copy Application code in.
+deep_mv "$BUILD_DIR" "$APP_DIR"
+
+# Set new context.
+ORIG_BUILD_DIR="$BUILD_DIR"
+BUILD_DIR="$APP_DIR"
+
 # Other configuration
 export PROFILE_DIR="$BUILD_DIR/.profile.d"
 export PROFILE_PATH="$PROFILE_DIR/python-extras.sh"
@@ -124,3 +139,6 @@ set_env_default LANG "$LANG"
 
 # Experimental post_compile hook.
 source "$BIN_DIR/steps/hooks/post_compile"
+
+deep_mv "$BUILD_DIR" "$ORIG_BUILD_DIR"
+deep_mv "$TMP_APP_DIR" "$APP_DIR"

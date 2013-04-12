@@ -23,25 +23,17 @@ fi
 
 set +e
 
-# Detect if version is outdated
+# Get current Python version if it exists
 if [ -f "$PYTHON_VERSION_FILE" ]; then
-    if [ ! $(cat $PYTHON_VERSION_FILE) = "$PYTHON_VERSION" ]; then
-        puts_step "Found $(cat $PYTHON_VERSION_FILE), removing."
-        CLEAN_PYTHON=true
-    else
-        SKIP_INSTALL=true
-    fi
-fi
-
-# Optionally start from scratch
-if [ -n "$CLEAN_PYTHON" ]; then
-    rm -fr "$PYTHON_DIR"
-    SKIP_INSTALL=false
+    CURRENT_PYTHON_VERSION=$(cat $PYTHON_VERSION_FILE)
 fi
 
 # Install Python.
-if [ ! "$SKIP_INSTALL" ]; then
+if [ ! "$FRESH_PYTHON" ] && [ "$CURRENT_PYTHON_VERSION" = "$PYTHON_VERSION" ]; then
+    puts_step "Using Python runtime ($PYTHON_VERSION)"
+else
     puts_step "Preparing Python runtime ($PYTHON_VERSION)"
+    rm -fr "$PYTHON_DIR" 2>/dev/null
 
     curl "http://envy-versions.s3.amazonaws.com/$PYTHON_VERSION.tar.bz2" -s | tar jx &> /dev/null
     if [[ $? != 0 ]] ; then
@@ -53,11 +45,7 @@ if [ ! "$SKIP_INSTALL" ]; then
 
     # Record for future reference.
     echo "$PYTHON_VERSION" > "$PYTHON_VERSION_FILE"
-    FRESH_PYTHON=true
-
     hash -r
-else
-    puts_step "Using Python runtime ($PYTHON_VERSION)"
 fi
 
 set -e

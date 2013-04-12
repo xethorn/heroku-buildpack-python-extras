@@ -4,8 +4,6 @@ PIP_SRC_DIR="$HEROKU_DIR/python/src"
 PIP_VERSION=${PIP_VERSION:-"1.3.1"}
 DISTRIBUTE_VERSION=${DISTRIBUTE_VERSION:-"0.6.36"}
 
-export PYTHONHOME="$HOME/$PYTHON_DIR"
-
 # If Pip isn't up to date:
 if [ "$FRESH_PYTHON" ] || [[ ! $(pip --version) == *$PIP_VERSION* ]]; then
     set +e
