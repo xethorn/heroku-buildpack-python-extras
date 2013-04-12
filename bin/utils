@@ -71,6 +71,24 @@ function set_env_default() {
     echo "export $1=\${$1:-$2}" >> ${3:-$PROFILE_PATH}
 }
 
+# Returns an absolute path to the given directory, relative to the build pack.
+# Usage:
+#
+#     $ build_path ".heroku/python"
+#     /app/.heroku/python
+function build_path() {
+    echo "$BUILD_DIR/$1"
+}
+
+# Returns an escaped path to the given directory, relative to the $HOME directory.
+# Usage:
+#
+#     $ app_path ".heroku/python"
+#     $HOME/.heroku/python
+function app_path() {
+    echo "\$HOME/$1"
+}
+
 # Does some serious copying.
 function deep_cp (){
   find -H $1 -maxdepth 1 -name '.*' -a \( -type d -o -type f -o -type l \) -exec cp -a '{}' $2 \;
