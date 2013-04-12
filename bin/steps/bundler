@@ -23,5 +23,5 @@ bundle install --without "$BUNDLE_WITHOUT" --path "$(build_path $RUBY_DIR)/bundl
 # Setup runtime env
 mkdir -p $(dirname $RUBY_PROFILE_PATH)
 set_env_override PATH "$(app_path $RUBY_DIR)/bin:$(app_path $BUNDLE_DIR)/bin:\$PATH" "$RUBY_PROFILE_PATH"
-set_env_default GEM_HOME "$(app_path $GEM_HOME)" "$RUBY_PROFILE_PATH"
-set_env_default GEM_PATH "$(app_path $GEM_PATH)" "$RUBY_PROFILE_PATH"
+set_env_default GEM_HOME "$(app_path $BUNDLE_DIR)" "$RUBY_PROFILE_PATH"
+set_env_default GEM_PATH "$(app_path $BUNDLE_DIR)" "$RUBY_PROFILE_PATH"

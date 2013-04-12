@@ -51,8 +51,6 @@ export HEROKU_DIR=".heroku"
 export HEROKU_VENDOR_DIR="$HEROKU_DIR/vendor"
 export HEROKU_LIB_DIR="$HEROKU_VENDOR_DIR/lib"
 export LANG="en_US.UTF-8"
-export LIBRARY_PATH="$(build_path $HEROKU_LIB_DIR)"
-export LD_LIBRARY_PATH="$(build_path $HEROKU_LIB_DIR)"
 export TIME_STEP_THRESHOLD=${TIME_STEP_THRESHOLD:-10}
 
 # Where to store the Pip download cache.
@@ -120,8 +118,6 @@ done
 
 # Set context environment variables.
 mkdir -p $(dirname $PROFILE_PATH)
-set_env_default LIBRARY_PATH "$(app_path $HEROKU_LIB_DIR)"
-set_env_default LD_LIBRARY_PATH "$(app_path $HEROKU_LIB_DIR)"
 set_env_default LANG "$LANG"
 
 # Experimental post_compile hook.

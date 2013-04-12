@@ -7,7 +7,7 @@ NODE_INCLUDE_PATH="$(build_path $NODE_DIR)/include"
 NPM_BIN_DIR="node_modules/.bin"
 NODE_PROFILE_PATH="$PROFILE_DIR/node.sh"
 
-# export PATH="$NPM_BIN_DIR:$(build_path $NODE_DIR)/bin:$PATH"
+export PATH="$NPM_BIN_DIR:$(build_path $NODE_DIR)/bin:$PATH"
 export CPATH="$NODE_INCLUDE_PATH"
 export CPPPATH="$NODE_INCLUDE_PATH"
 
