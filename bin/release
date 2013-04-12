@@ -8,11 +8,10 @@ NAME=$($BIN_DIR/detect $BUILD_DIR) || exit 1
 cat <<EOF
 ---
 config_vars:
-  PATH: /app/.heroku/venv/bin:/app/.heroku/ruby/bin:/app/.heroku/node/bin:node_modules/.bin:/app/.heroku/ruby/bundle/ruby/1.9.1/bin:/bin:/usr/local/bin:/usr/bin
+  PATH: /app/bin:/app/.heroku/python/bin:/app/.heroku/ruby/bin:/app/.heroku/ruby/bundle/ruby/1.9.1/bin:/app/.heroku/node/bin: node_modules/.bin:/bin:/usr/local/bin:/usr/bin
   LIBRARY_PATH: /app/.heroku/vendor/lib
   LD_LIBRARY_PATH: /app/.heroku/vendor/lib
-  GEOS_LIBRARY_PATH: /app/.heroku/vendor/lib/libgeos_c.so
-  PYTHONHOME: /app/.heroku/venv/
+  PYTHONHOME: /app/.heroku/python/
   PYTHONPATH: /app/
   PYTHONUNBUFFERED: true
   PYTHONHASHSEED: random
@@ -22,7 +21,7 @@ config_vars:
 EOF
 
 # Add configuration for Django projects
-[ -f $BUILD_DIR/manage.py ] || exit 0
+[ -f "$BUILD_DIR/manage.py" ] || exit 0
 
 cat <<EOF
 
