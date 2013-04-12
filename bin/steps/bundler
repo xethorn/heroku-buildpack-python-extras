@@ -6,22 +6,22 @@ BUNDLER_VERSION=${BUNDLER_VERSION:-"1.2.1"}
 BUNDLE_WITHOUT=${BUNDLE_WITHOUT:-"development:test"}
 RUBY_PROFILE_PATH="$PROFILE_DIR/ruby.sh"
 
-export PATH="$RUBY_DIR/bin:$BUNDLE_DIR/bin:$PATH"
-export GEM_HOME="$BUNDLE_DIR"
-export GEM_PATH="$BUNDLE_DIR"
+export PATH="$(build_path $RUBY_DIR)/bin:$(build_path $BUNDLE_DIR)/bin:$PATH"
+export GEM_HOME="$(build_path $BUNDLE_DIR)"
+export GEM_PATH="$(build_path $BUNDLE_DIR)"
 
 # Let's get started...
 puts_step "Installing gem dependencies using bundler version $BUNDLER_VERSION"
 
 # Install Bundler
 echo "Installing bundler..." | indent
-download_package heroku-buildpack-ruby bundler "$BUNDLER_VERSION" "$BUNDLE_DIR"
+download_s3_package heroku-buildpack-ruby bundler "$BUNDLER_VERSION" "$(build_path $BUNDLE_DIR)"
 
 # Run Bundler to install dependencies
-bundle install --without "$BUNDLE_WITHOUT" --path "$RUBY_DIR/bundle" --binstubs "$RUBY_DIR/bin" --deployment | indent
+bundle install --without "$BUNDLE_WITHOUT" --path "$(build_path $RUBY_DIR)/bundle" --binstubs "$(build_path $RUBY_DIR)/bin" --deployment | indent
 
 # Setup runtime env
 mkdir -p $(dirname $RUBY_PROFILE_PATH)
-set_env_override PATH "$RUBY_DIR/bin:$BUNDLE_DIR/bin:\$PATH" "$RUBY_PROFILE_PATH"
-set_env_default GEM_HOME "$GEM_HOME" "$RUBY_PROFILE_PATH"
-set_env_default GEM_PATH "$GEM_PATH" "$RUBY_PROFILE_PATH"
+set_env_override PATH "$(app_path $RUBY_DIR)/bin:$(app_path $BUNDLE_DIR)/bin:\$PATH" "$RUBY_PROFILE_PATH"
+set_env_default GEM_HOME "$(app_path $GEM_HOME)" "$RUBY_PROFILE_PATH"
+set_env_default GEM_PATH "$(app_path $GEM_PATH)" "$RUBY_PROFILE_PATH"

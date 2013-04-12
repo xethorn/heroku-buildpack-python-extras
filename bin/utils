@@ -71,31 +71,29 @@ function set_env_default() {
     echo "export $1=\${$1:-$2}" >> ${3:-$PROFILE_PATH}
 }
 
-# Usage: unset_env key
-function unset_env() {
-    echo "unset $1" >> ${2:-$PROFILE_PATH}
+function build_path() {
+    echo "$BUILD_DIR/$1"
 }
 
-# Does some serious copying.
-function deep_cp (){
-  find -H $1 -maxdepth 1 -name '.*' -a \( -type d -o -type f -o -type l \) -exec cp -a '{}' $2 \;
-  cp -r $1/!(tmp) $2
+function app_path() {
+    echo "\$HOME/$1"
 }
 
-# Does some serious moving.
-function deep_mv (){
-  deep_cp "$1" "$2"
-  rm -fr $1/!(tmp)
-  find -H $1 -maxdepth 1 -name '.*' -a \( -type d -o -type f -o -type l \) -exec rm -fr '{}' \;
-}
-
-# Usage: $ download_package bucket engine version location
-function download_package() {
+# Usage: $ download_s3_package bucket engine version location
+function download_s3_package() {
     local bucket="$1"
     local engine="$2"
     local version="$3"
     local location="$4"
-    local package="http://s3.amazonaws.com/$bucket/$engine-$version.tgz"
+    local package="http://$bucket.s3.amazonaws.com/$engine-$version.tgz"
+
+    download_package "$package" "$location"
+}
+
+# Usage: $ download_package tarball_url location
+function download_package() {
+    local package="$1"
+    local location="$2"
 
     mkdir -p $location
     curl $package -s -o - | tar xzf - -C $location

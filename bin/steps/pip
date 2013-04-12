@@ -35,4 +35,4 @@ fi
 
 # Install dependencies with Pip.
 puts_step "Installing dependencies using Pip ($PIP_VERSION)"
-pip install --use-mirrors -r requirements.txt --exists-action=w --src=./.heroku/src | cleanup_pip | indent
+pip install --use-mirrors -r requirements.txt --exists-action=w | cleanup_pip | indent

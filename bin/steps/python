@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 
-PYTHON_DIR="$VENDOR_DIR/python"
+PYTHON_DIR="$HEROKU_DIR/python"
+PYTHON_VERSION_FILE="$HEROKU_DIR/python-version"
 PYTHON_VERSION=${PYTHON_VERSION:-"python-2.7.4"}
 PYTHON_PROFILE_PATH="$PROFILE_DIR/python.sh"
 
-export PATH="$PYTHON_BIN:$PATH"
+export PATH="$(build_path $PYTHON_BIN):$PATH"
 export PYTHONUNBUFFERED=true
-export PYTHONHOME="$PYTHON_DIR"
+export PYTHONHOME="$(build_path $PYTHON_DIR)"
 export PYTHONHASHSEED="random"
-export PYTHONPATH="$HOME/"
+export PYTHONPATH="$BUILD_DIR"
 
 # If no runtime given, assume default version.
 if [ -f runtime.txt ]; then
@@ -23,10 +24,10 @@ fi
 set +e
 
 # Install Python.
-if [ -f .heroku/python-version ]; then
-    if [ ! $(cat .heroku/python-version) = $PYTHON_VERSION ]; then
-        puts_step "Found $(cat .heroku/python-version), removing."
-        rm -fr .heroku/python
+if [ -f "$PYTHON_VERSION_FILE" ]; then
+    if [ ! $(cat $PYTHON_VERSION_FILE) = "$PYTHON_VERSION" ]; then
+        puts_step "Found $(cat $PYTHON_VERSION_FILE), removing."
+        rm -fr "$PYTHON_DIR"
     else
         SKIP_INSTALL=1
     fi
@@ -41,10 +42,10 @@ if [ ! "$SKIP_INSTALL" ]; then
         puts_warn "Aborting.  More info: https://devcenter.heroku.com/articles/python-support"
         exit 1
     fi
-    mv python .heroku/python
+    mv python "$PYTHON_DIR"
 
     # Record for future reference.
-    echo "$PYTHON_VERSION" > .heroku/python-version
+    echo "$PYTHON_VERSION" > "$PYTHON_VERSION_FILE"
     FRESH_PYTHON=true
 
     hash -r
@@ -56,8 +57,8 @@ set -e
 
 # Setup runtime env
 mkdir -p $(dirname $PYTHON_PROFILE_PATH)
-set_env_override PATH "$PYTHON_DIR/bin:\$PATH" "$PYTHON_PROFILE_PATH"
+set_env_override PATH "$(app_path $PYTHON_DIR)/bin:\$PATH" "$PYTHON_PROFILE_PATH"
 set_env_default PYTHONUNBUFFERED true "$PYTHON_PROFILE_PATH"
-set_env_default PYTHONHOME "$PYTHON_DIR" "$PYTHON_PROFILE_PATH"
+set_env_default PYTHONHOME "$(app_path $PYTHON_DIR)" "$PYTHON_PROFILE_PATH"
 set_env_default PYTHONHASHSEED "random" "$PYTHON_PROFILE_PATH"
-set_env_default PYTHONPATH "$HOME/" "$PYTHON_PROFILE_PATH"
+set_env_default PYTHONPATH "\$HOME" "$PYTHON_PROFILE_PATH"

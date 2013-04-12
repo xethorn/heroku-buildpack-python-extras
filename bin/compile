@@ -41,36 +41,22 @@ export ROOT_DIR=$(dirname $BIN_DIR)
 export BUILD_DIR="$1"
 export CACHE_DIR="$2"
 
-# Directory Hacks for path consistiency.
-APP_DIR="/app"
-TMP_APP_DIR="$CACHE_DIR/tmp_app_dir"
-
-# Copy Anvil app dir to temporary storage...
-mkdir -p "$TMP_APP_DIR"
-deep_mv "$APP_DIR" "$TMP_APP_DIR"
-
-# Copy Application code in.
-deep_mv "$BUILD_DIR" "$APP_DIR"
-
-# Set new context.
-ORIG_BUILD_DIR="$BUILD_DIR"
-export BUILD_DIR="$APP_DIR"
+# Syntax sugar.
+source "$BIN_DIR/utils"
 
 # Other configuration
 export PROFILE_DIR="$BUILD_DIR/.profile.d"
 export PROFILE_PATH="$PROFILE_DIR/python-extras.sh"
-export HEROKU_DIR="$BUILD_DIR/.heroku"
-export HEROKU_LIB_DIR="$HEROKU_DIR/vendor/lib"
+export HEROKU_DIR=".heroku"
+export HEROKU_VENDOR_DIR="$HEROKU_DIR/vendor"
+export HEROKU_LIB_DIR="$HEROKU_VENDOR_DIR/lib"
 export LANG="en_US.UTF-8"
-export LIBRARY_PATH="$HEROKU_LIB_DIR"
-export LD_LIBRARY_PATH="$HEROKU_LIB_DIR"
+export LIBRARY_PATH="$(build_path $HEROKU_LIB_DIR)"
+export LD_LIBRARY_PATH="$(build_path $HEROKU_LIB_DIR)"
 export TIME_STEP_THRESHOLD=${TIME_STEP_THRESHOLD:-10}
 
 # Where to store the Pip download cache.
-CACHED_DIRS=(".heroku" ".bundle")
-
-# Syntax sugar.
-source "$BIN_DIR/utils"
+CACHED_DIRS=("$HEROKU_DIR" ".bundle")
 
 # Switch to the repo's context.
 cd "$BUILD_DIR"
@@ -134,14 +120,9 @@ done
 
 # Set context environment variables.
 mkdir -p $(dirname $PROFILE_PATH)
-set_env_default LIBRARY_PATH "$HEROKU_LIB_DIR"
-set_env_default LD_LIBRARY_PATH "$HEROKU_LIB_DIR"
+set_env_default LIBRARY_PATH "$(app_path $HEROKU_LIB_DIR)"
+set_env_default LD_LIBRARY_PATH "$(app_path $HEROKU_LIB_DIR)"
 set_env_default LANG "$LANG"
 
 # Experimental post_compile hook.
 source "$BIN_DIR/steps/hooks/post_compile"
-
-# ### Fin.
-
-deep_mv "$BUILD_DIR" "$ORIG_BUILD_DIR"
-deep_mv "$TMP_APP_DIR" "$APP_DIR"
