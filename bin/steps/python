@@ -19,20 +19,27 @@ else
 fi
 
 # Purge "old-style" virtualenvs.
-[ -d "$CACHE_DIR/.heroku/venv" ] && rm -fr "$CACHE_DIR/.heroku/venv" "$CACHE_DIR/.heroku/src"
+[ -d "$CACHE_DIR/.heroku/venv" ] && rm -fr "$CACHE_DIR/.heroku/venv"
 
 set +e
 
-# Install Python.
+# Detect if version is outdated
 if [ -f "$PYTHON_VERSION_FILE" ]; then
     if [ ! $(cat $PYTHON_VERSION_FILE) = "$PYTHON_VERSION" ]; then
         puts_step "Found $(cat $PYTHON_VERSION_FILE), removing."
-        rm -fr "$PYTHON_DIR"
+        CLEAN_PYTHON=true
     else
-        SKIP_INSTALL=1
+        SKIP_INSTALL=true
     fi
 fi
 
+# Optionally start from scratch
+if [ -n "$CLEAN_PYTHON" ]; then
+    rm -fr "$PYTHON_DIR"
+    SKIP_INSTALL=false
+fi
+
+# Install Python.
 if [ ! "$SKIP_INSTALL" ]; then
     puts_step "Preparing Python runtime ($PYTHON_VERSION)"
 
