@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-GEOS_DIR="$BUILD_DIR/.heroku/vendor"
+GEOS_DIR="$HEROKU_DIR/vendor"
 GEOS_VERSION=${GEOS_VERSION:-"3.3.5"}
 GEOS_PROFILE_PATH="$PROFILE_DIR/geos.sh"
 

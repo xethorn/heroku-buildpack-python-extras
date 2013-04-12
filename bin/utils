@@ -63,17 +63,17 @@ function time_step() {
 
 # Usage: $ set_env_override key value
 function set_env_override() {
-    echo "export $1=$2" >> ${3:-$PYTHON_PROFILE_PATH}
+    echo "export $1=$2" >> ${3:-$PROFILE_PATH}
 }
 
 # Usage: $ set_env_default key value
 function set_env_default() {
-    echo "export $1=\${$1:-$2}" >> ${3:-$PYTHON_PROFILE_PATH}
+    echo "export $1=\${$1:-$2}" >> ${3:-$PROFILE_PATH}
 }
 
 # Usage: unset_env key
 function unset_env() {
-    echo "unset $1" >> ${2:-$PYTHON_PROFILE_PATH}
+    echo "unset $1" >> ${2:-$PROFILE_PATH}
 }
 
 # Does some serious copying.

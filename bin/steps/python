@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+PYTHON_DIR="$VENDOR_DIR/python"
+PYTHON_VERSION=${PYTHON_VERSION:-"python-2.7.4"}
+PYTHON_PROFILE_PATH="$PROFILE_DIR/python.sh"
+
+export PATH="$PYTHON_BIN:$PATH"
+export PYTHONUNBUFFERED=true
+export PYTHONHOME="$PYTHON_DIR"
+export PYTHONHASHSEED="random"
+export PYTHONPATH="$HOME/"
+
+# If no runtime given, assume default version.
+if [ -f runtime.txt ]; then
+    PYTHON_VERSION=$(cat runtime.txt)
+else
+    puts_step "No runtime.txt provided; assuming $PYTHON_VERSION."
+fi
+
+# Purge "old-style" virtualenvs.
+[ -d "$CACHE_DIR/.heroku/venv" ] && rm -fr "$CACHE_DIR/.heroku/venv" "$CACHE_DIR/.heroku/src"
+
+set +e
+
+# Install Python.
+if [ -f .heroku/python-version ]; then
+    if [ ! $(cat .heroku/python-version) = $PYTHON_VERSION ]; then
+        puts_step "Found $(cat .heroku/python-version), removing."
+        rm -fr .heroku/python
+    else
+        SKIP_INSTALL=1
+    fi
+fi
+
+if [ ! "$SKIP_INSTALL" ]; then
+    puts_step "Preparing Python runtime ($PYTHON_VERSION)"
+
+    curl "http://envy-versions.s3.amazonaws.com/$PYTHON_VERSION.tar.bz2" -s | tar jx &> /dev/null
+    if [[ $? != 0 ]] ; then
+        puts_warn "Requested runtime ($PYTHON_VERSION) was not found."
+        puts_warn "Aborting.  More info: https://devcenter.heroku.com/articles/python-support"
+        exit 1
+    fi
+    mv python .heroku/python
+
+    # Record for future reference.
+    echo "$PYTHON_VERSION" > .heroku/python-version
+    FRESH_PYTHON=true
+
+    hash -r
+else
+    puts_step "Using Python runtime ($PYTHON_VERSION)"
+fi
+
+set -e
+
+# Setup runtime env
+mkdir -p $(dirname $PYTHON_PROFILE_PATH)
+set_env_override PATH "$PYTHON_DIR/bin:\$PATH" "$PYTHON_PROFILE_PATH"
+set_env_default PYTHONUNBUFFERED true "$PYTHON_PROFILE_PATH"
+set_env_default PYTHONHOME "$PYTHON_DIR" "$PYTHON_PROFILE_PATH"
+set_env_default PYTHONHASHSEED "random" "$PYTHON_PROFILE_PATH"
+set_env_default PYTHONPATH "$HOME/" "$PYTHON_PROFILE_PATH"

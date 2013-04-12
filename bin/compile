@@ -32,42 +32,14 @@
 # Fail fast and fail hard.
 set -eo pipefail
 
-# Prepend proper path for virtualenv hackery. This will be deprecated soon.
-export PATH=":/usr/local/bin:$PATH"
+# Sanitizing environment variables.
+unset GIT_DIR
 
 # Paths.
-BIN_DIR=$(cd $(dirname $0); pwd) # absolute path
-ROOT_DIR=$(dirname $BIN_DIR)
-BUILD_DIR="$1"
-CACHE_DIR="$2"
-PROFILE_DIR="$BUILD_DIR/.profile.d"
-
-# Where to store the Pip download cache.
-CACHED_DIRS=(".heroku" ".bundle")
-
-# Static configurations for virtualenv caches.
-VIRTUALENV_LOC=".heroku/venv"
-PYTHON_PROFILE_PATH="$PROFILE_DIR/python.sh"
-
-# Python version. This will be used in the future to specify custom Pythons.
-DEFAULT_PYTHON_VERSION="python-2.7.4"
-PYTHON_DIR="/app/.heroku/python"
-VENDOR_DIR="/app/.heroku/vendor"
-PYTHON_BIN="$PYTHON_DIR/bin"
-PIP_VERSION="1.3.1"
-DISTRIBUTE_VERSION="0.6.36"
-
-# Time steps
-TIME_STEP_THRESHOLD=${TIME_STEP_THRESHOLD:-10}
-
-# Sanitizing environment variables.
-unset GIT_DIR PYTHONHOME PYTHONPATH LD_LIBRARY_PATH LIBRARY_PATH
-
-# We'll need to send these statics to other scripts we `source`.
-export BUILD_DIR CACHE_DIR BIN_DIR PYTHON_PROFILE_PATH
-
-# Syntax sugar.
-source "$BIN_DIR/utils"
+export BIN_DIR=$(cd $(dirname $0); pwd) # absolute path
+export ROOT_DIR=$(dirname $BIN_DIR)
+export BUILD_DIR="$1"
+export CACHE_DIR="$2"
 
 # Directory Hacks for path consistiency.
 APP_DIR="/app"
@@ -82,19 +54,23 @@ deep_mv "$BUILD_DIR" "$APP_DIR"
 
 # Set new context.
 ORIG_BUILD_DIR="$BUILD_DIR"
-BUILD_DIR="$APP_DIR"
+export BUILD_DIR="$APP_DIR"
 
-echo "APP_DIR: $APP_DIR"
-echo "TMP_APP_DIR: $TMP_APP_DIR"
-echo "ORIG_BUILD_DIR: $ORIG_BUILD_DIR"
-echo "BUIKD_DIR: $BUILD_DIR"
-
-# Prepend proper path buildpack use.
-export PATH="$BUILD_DIR/.heroku/python/bin:$PATH"
-export PYTHONUNBUFFERED="1"
+# Other configuration
+export PROFILE_DIR="$BUILD_DIR/.profile.d"
+export PROFILE_PATH="$PROFILE_DIR/python-extras.sh"
+export HEROKU_DIR="$BUILD_DIR/.heroku"
+export HEROKU_LIB_DIR="$HEROKU_DIR/vendor/lib"
 export LANG="en_US.UTF-8"
-export LIBRARY_PATH="$VENDOR_DIR/lib"
-export LD_LIBRARY_PATH="$VENDOR_DIR/lib"
+export LIBRARY_PATH="$HEROKU_LIB_DIR"
+export LD_LIBRARY_PATH="$HEROKU_LIB_DIR"
+export TIME_STEP_THRESHOLD=${TIME_STEP_THRESHOLD:-10}
+
+# Where to store the Pip download cache.
+CACHED_DIRS=(".heroku" ".bundle")
+
+# Syntax sugar.
+source "$BIN_DIR/utils"
 
 # Switch to the repo's context.
 cd "$BUILD_DIR"
@@ -102,23 +78,8 @@ cd "$BUILD_DIR"
 # Experimental pre_compile hook.
 source "$BIN_DIR/steps/hooks/pre_compile"
 
-# If no requirements given, assume `setup.py develop`.
-if [ ! -f requirements.txt ]; then
-    puts_step "No requirements.txt provided; assuming dist package."
-    echo "-e ." > requirements.txt
-fi
-
-# If no runtime given, assume default version.
-if [ ! -f runtime.txt ]; then
-  puts_step "No runtime.txt provided; assuming $DEFAULT_PYTHON_VERSION."
-  echo "$DEFAULT_PYTHON_VERSION" > runtime.txt
-fi
-
 # ### The Cache
 mkdir -p "$CACHE_DIR"
-
-# Purge "old-style" virtualenvs.
-[ -d "$CACHE_DIR/$VIRTUALENV_LOC" ] && rm -fr "$CACHE_DIR/.heroku/venv" "$CACHE_DIR/.heroku/src"
 
 # Restore old artifacts from the cache.
 for dir in $CACHED_DIRS; do
@@ -127,62 +88,11 @@ done
 
 set +e
 # Create set-aside `.heroku` folder.
-mkdir .heroku &> /dev/null
+mkdir "$HEROKU_DIR" &> /dev/null
 set -e
 
-# Buildpack profile init script
-mkdir -p $(dirname $PYTHON_PROFILE_PATH)
-
-set +e
-PYTHON_VERSION=$(cat runtime.txt)
-
-# Install Python.
-if [ -f .heroku/python-version ]; then
-    if [ ! $(cat .heroku/python-version) = $PYTHON_VERSION ]; then
-        puts_step "Found $(cat .heroku/python-version), removing."
-        rm -fr .heroku/python
-    else
-        SKIP_INSTALL=1
-    fi
-fi
-
-if [ ! "$SKIP_INSTALL" ]; then
-    puts_step "Preparing Python runtime ($PYTHON_VERSION)"
-    curl "http://envy-versions.s3.amazonaws.com/$PYTHON_VERSION.tar.bz2" -s | tar jx &> /dev/null
-    if [[ $? != 0 ]] ; then
-        puts_warn "Requested runtime ($PYTHON_VERSION) was not found."
-        puts_warn "Aborting.  More info: https://devcenter.heroku.com/articles/python-support"
-        exit 1
-    fi
-    mv python .heroku/python
-
-    # Record for future reference.
-    echo "$PYTHON_VERSION" > .heroku/python-version
-    FRESH_PYTHON=true
-
-    hash -r
-else
-    puts_step "Using Python runtime ($PYTHON_VERSION)"
-fi
-
-# If Pip isn't up to date:
-if [ "$FRESH_PYTHON" ] || [[ ! $(pip --version) == *$PIP_VERSION* ]]; then
-    WORKING_DIR=$(pwd)
-
-    # Prepare it for the real world
-    puts_step "Installing Distribute ($DISTRIBUTE_VERSION)"
-    cd "$ROOT_DIR/vendor/distribute-$DISTRIBUTE_VERSION/"
-    python setup.py install &> /dev/null
-    cd "$WORKING_DIR"
-
-    puts_step "Installing Pip ($PIP_VERSION)"
-    cd "$ROOT_DIR/vendor/pip-$PIP_VERSION/"
-    python setup.py install &> /dev/null
-    cd "$WORKING_DIR"
-fi
-
-set -e
-hash -r
+# Install specified Python version.
+source "$BIN_DIR/steps/python"
 
 # Pylibmc support.
 # See [`bin/steps/pylibmc`](pylibmc.html).
@@ -195,14 +105,8 @@ if [ ! "$DISABLE_GEOS" ]; then
     source "$BIN_DIR/steps/geos"
 fi
 
-# Install Mercurial if it appears to be required.
-if (grep -Fiq "hg+" requirements.txt) then
-    "$PYTHON_BIN/pip" install --use-mirrors mercurial | cleanup_pip | indent
-fi
-
-# Install dependencies with Pip.
-puts_step "Installing dependencies using Pip ($PIP_VERSION)"
-"$PYTHON_BIN/pip" install --use-mirrors -r requirements.txt --exists-action=w --src=./.heroku/src | cleanup_pip | indent
+# Install Pip dependencies
+source "$BIN_DIR/steps/pip"
 
 # Install required gems if there's a Gemfile.
 if [ -f Gemfile.lock ] && [ ! "$DISABLE_BUNDLER" ]; then
@@ -229,14 +133,10 @@ for dir in $CACHED_DIRS; do
 done
 
 # Set context environment variables.
-set_env_override PATH "$PYTHON_BIN:\$PATH"
-set_env_default PYTHONUNBUFFERED true
-set_env_default PYTHONHOME "$PYTHON_DIR"
-set_env_default LIBRARY_PATH "$VENDOR_DIR/lib"
-set_env_default LD_LIBRARY_PATH "$VENDOR_DIR/lib"
-set_env_default LANG "en_US.UTF-8"
-set_env_default PYTHONHASHSEED "random"
-set_env_default PYTHONPATH "/app/"
+mkdir -p $(dirname $PROFILE_PATH)
+set_env_default LIBRARY_PATH "$HEROKU_LIB_DIR"
+set_env_default LD_LIBRARY_PATH "$HEROKU_LIB_DIR"
+set_env_default LANG "$LANG"
 
 # Experimental post_compile hook.
 source "$BIN_DIR/steps/hooks/post_compile"
