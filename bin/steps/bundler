@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 RUBY_DIR="$BUILD_DIR/.heroku/ruby"
+echo $RUBY_DIR
 VENDOR_DIR="$RUBY_DIR/bundle/ruby/1.9.1"
 BUNDLER_VERSION=${BUNDLER_VERSION:-"1.2.1"}
 BUNDLE_WITHOUT=${BUNDLE_WITHOUT:-"development:test"}

@@ -4,9 +4,10 @@ NODE_DIR="$BUILD_DIR/.heroku/node"
 NODE_VERSION="0.4.7"
 NPM_VERSION="1.0.106"
 INCLUDE_PATH="$NODE_DIR/include"
+NPM_BIN_DIR="node_modules/.bin"
 NODE_PROFILE_PATH="$PROFILE_DIR/node.sh"
 
-PATH="$NODE_DIR/bin:$PATH"
+PATH="$NPM_BIN_DIR:$NODE_DIR/bin:$PATH"
 export CPATH="$INCLUDE_PATH"
 export CPPPATH="$INCLUDE_PATH"
 
@@ -24,4 +25,4 @@ HOME="$BUILD_DIR" $NODE_DIR/bin/node $NODE_DIR/cli.js install --production 2>&1 
 
 # Setup runtime env
 mkdir -p $(dirname $NODE_PROFILE_PATH)
-set_env_override PATH 'node_modules/.bin:$PATH' "$NODE_PROFILE_PATH"
+set_env_override PATH "$NPM_BIN_DIR:$NODE_DIR/bin:\$PATH" "$NODE_PROFILE_PATH"
