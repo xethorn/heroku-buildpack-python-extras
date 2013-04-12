@@ -97,6 +97,6 @@ function download_package() {
     local location="$4"
     local package="http://s3.amazonaws.com/$bucket/$engine-$version.tgz"
 
-    mkdir -p "$location"
-    curl "$package" -s -o - | tar xzf - -C "$location"
+    mkdir -p $location
+    curl $package -s -o - | tar xzf - -C $location
 }
