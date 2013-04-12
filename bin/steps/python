@@ -5,7 +5,7 @@ PYTHON_VERSION_FILE="$HEROKU_DIR/python-version"
 PYTHON_VERSION=${PYTHON_VERSION:-"python-2.7.4"}
 PYTHON_PROFILE_PATH="$PROFILE_DIR/python.sh"
 
-export PATH="$(build_path $PYTHON_BIN):$PATH"
+export PATH="$(build_path $PYTHON_DIR)/bin:$PATH"
 export PYTHONUNBUFFERED=true
 export PYTHONHOME="$(build_path $PYTHON_DIR)"
 export PYTHONHASHSEED="random"
