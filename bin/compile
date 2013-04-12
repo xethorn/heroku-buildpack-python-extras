@@ -105,7 +105,7 @@ fi
 
 # If no runtime given, assume default version.
 if [ ! -f runtime.txt ]; then
-  puts-step "No runtime.txt provided; assuming $DEFAULT_PYTHON_VERSION."
+  puts_step "No runtime.txt provided; assuming $DEFAULT_PYTHON_VERSION."
   echo "$DEFAULT_PYTHON_VERSION" > runtime.txt
 fi
 
@@ -134,7 +134,7 @@ PYTHON_VERSION=$(cat runtime.txt)
 # Install Python.
 if [ -f .heroku/python-version ]; then
     if [ ! $(cat .heroku/python-version) = $PYTHON_VERSION ]; then
-        puts-step "Found $(cat .heroku/python-version), removing."
+        puts_step "Found $(cat .heroku/python-version), removing."
         rm -fr .heroku/python
     else
         SKIP_INSTALL=1
@@ -142,11 +142,11 @@ if [ -f .heroku/python-version ]; then
 fi
 
 if [ ! "$SKIP_INSTALL" ]; then
-    puts-step "Preparing Python runtime ($PYTHON_VERSION)"
+    puts_step "Preparing Python runtime ($PYTHON_VERSION)"
     curl "http://envy-versions.s3.amazonaws.com/$PYTHON_VERSION.tar.bz2" -s | tar jx &> /dev/null
     if [[ $? != 0 ]] ; then
-        puts-warn "Requested runtime ($PYTHON_VERSION) was not found."
-        puts-warn "Aborting.  More info: https://devcenter.heroku.com/articles/python-support"
+        puts_warn "Requested runtime ($PYTHON_VERSION) was not found."
+        puts_warn "Aborting.  More info: https://devcenter.heroku.com/articles/python-support"
         exit 1
     fi
     mv python .heroku/python
@@ -157,7 +157,7 @@ if [ ! "$SKIP_INSTALL" ]; then
 
     hash -r
 else
-    puts-step "Using Python runtime ($PYTHON_VERSION)"
+    puts_step "Using Python runtime ($PYTHON_VERSION)"
 fi
 
 # If Pip isn't up to date:
@@ -165,12 +165,12 @@ if [ "$FRESH_PYTHON" ] || [[ ! $(pip --version) == *$PIP_VERSION* ]]; then
     WORKING_DIR=$(pwd)
 
     # Prepare it for the real world
-    puts-step "Installing Distribute ($DISTRIBUTE_VERSION)"
+    puts_step "Installing Distribute ($DISTRIBUTE_VERSION)"
     cd "$ROOT_DIR/vendor/distribute-$DISTRIBUTE_VERSION/"
     python setup.py install &> /dev/null
     cd "$WORKING_DIR"
 
-    puts-step "Installing Pip ($PIP_VERSION)"
+    puts_step "Installing Pip ($PIP_VERSION)"
     cd "$ROOT_DIR/vendor/pip-$PIP_VERSION/"
     python setup.py install &> /dev/null
     cd "$WORKING_DIR"
@@ -196,7 +196,7 @@ if (grep -Fiq "hg+" requirements.txt) then
 fi
 
 # Install dependencies with Pip.
-puts-step "Installing dependencies using Pip ($PIP_VERSION)"
+puts_step "Installing dependencies using Pip ($PIP_VERSION)"
 "$PYTHON_BIN/pip" install --use-mirrors -r requirements.txt --exists-action=w --src=./.heroku/src | cleanup_pip | indent
 
 # Install required gems if there's a Gemfile.

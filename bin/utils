@@ -19,11 +19,6 @@ function cleanup_pip() {
         sed -e '/no previously-included files/d'
 }
 
-# Virtualenv wrapper.
-function virtualenv() {
-    python "$ROOT_DIR/vendor/virtualenv-1.7.2/virtualenv.py" "$@"
-}
-
 # Buildpack Steps. Usage:
 #
 #     $ puts_step "Step #1"
