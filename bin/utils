@@ -2,10 +2,12 @@
 
 shopt -s extglob
 
+[ $(uname) == "Darwin" ] && SED_FLAG="-l" || SED_FLAG="-u"
+
 # Syntax sugar.
 function indent() {
     RE="s/^/       /"
-    [ $(uname) == "Darwin" ] && sed -l "$RE" || sed -u "$RE"
+    sed $SED_FLAG "$RE"
 }
 
 # Clean up pip output
@@ -34,7 +36,7 @@ function puts_step() {
 # Buildpack Warnings. Usage:
 #
 #     $ puts_warn "Some Warning!"
-#      !     Some Warning!
+#     !     Some Warning!
 function puts_warn() {
     echo " !     $@"
 }
@@ -66,22 +68,40 @@ function time_step() {
 
 # Usage: $ set_env_override key value
 function set_env_override() {
-    echo "export $1=$2" >> ${3:-$PROFILE_PATH}
+    echo "export $1=$2" >> ${3:-$PYTHON_PROFILE_PATH}
 }
 
 # Usage: $ set_env_default key value
 function set_env_default() {
-    echo "export $1=\${$1:-$2}" >> ${3:-$PROFILE_PATH}
+    echo "export $1=\${$1:-$2}" >> ${3:-$PYTHON_PROFILE_PATH}
+}
+
+# Usage: unset_env key
+function unset_env() {
+    echo "unset $1" >> ${2:-$PYTHON_PROFILE_PATH}
+}
+
+# Does some serious copying.
+function deep_cp (){
+  find -H "$1" -maxdepth 1 -name ".*" -a \( -type d -o -type f -o -type l \) -exec cp -a "{}" "$2" \;
+  cp -r "$1/!(tmp)" "$2"
+}
+
+# Does some serious moving.
+function deep_mv (){
+  deep_cp "$1" "$2"
+  rm -fr "$1/!(tmp)"
+  find -H "$1" -maxdepth 1 -name ".*" -a \( -type d -o -type f -o -type l \) -exec rm -fr "{}" \;
 }
 
 # Usage: $ download_package bucket engine version location
 function download_package() {
-    bucket="$1"
-    engine="$2"
-    version="$3"
-    location="$4"
-    package="http://s3.amazonaws.com/$bucket/$engine-$version.tgz"
+    local bucket="$1"
+    local engine="$2"
+    local version="$3"
+    local location="$4"
+    local package="http://s3.amazonaws.com/$bucket/$engine-$version.tgz"
 
-    mkdir -p $location
-    curl $package -s -o - | tar xzf - -C $location
+    mkdir -p "$location"
+    curl "$package" -s -o - | tar xzf - -C "$location"
 }
