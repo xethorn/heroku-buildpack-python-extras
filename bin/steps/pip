@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+PIP_SRC_DIR="$HEROKU_DIR/python/src"
+PIP_VERSION=${PIP_VERSION:-"1.3.1"}
+DISTRIBUTE_VERSION=${DISTRIBUTE_VERSION:-"0.6.36"}
+
+# If Pip isn't up to date:
+if [ "$FRESH_PYTHON" ] || [[ ! $(pip --version) == *$PIP_VERSION* ]]; then
+    set +e
+    WORKING_DIR=$(pwd)
+
+    # Prepare it for the real world
+    puts_step "Installing Distribute ($DISTRIBUTE_VERSION)"
+    cd "$ROOT_DIR/vendor/distribute-$DISTRIBUTE_VERSION/"
+    python setup.py install &> /dev/null
+    cd "$WORKING_DIR"
+
+    puts_step "Installing Pip ($PIP_VERSION)"
+    cd "$ROOT_DIR/vendor/pip-$PIP_VERSION/"
+    python setup.py install &> /dev/null
+    cd "$WORKING_DIR"
+    set -e
+    hash -r
+fi
+
+# If no requirements given, assume `setup.py develop`.
+if [ ! -f requirements.txt ]; then
+    puts_step "No requirements.txt provided; assuming dist package."
+    echo "-e ." > requirements.txt
+fi
+
+# Install Mercurial if it appears to be required.
+if (grep -Fiq "hg+" requirements.txt) then
+    pip install --use-mirrors mercurial | cleanup_pip | indent
+fi
+
+# Install dependencies with Pip.
+puts_step "Installing dependencies using Pip ($PIP_VERSION)"
+pip install --use-mirrors -r requirements.txt --exists-action=w --src="$PIP_SRC_DIR" | cleanup_pip | indent

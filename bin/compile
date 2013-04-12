@@ -32,198 +32,113 @@
 # Fail fast and fail hard.
 set -eo pipefail
 
-# Prepend proper path for virtualenv hackery. This will be deprecated soon.
-export PATH=":/usr/local/bin:$PATH"
+# Sanitizing environment variables.
+unset GIT_DIR
 
 # Paths.
-BIN_DIR=$(cd $(dirname $0); pwd) # absolute path
-ROOT_DIR=$(dirname $BIN_DIR)
-BUILD_DIR="$1"
-CACHE_DIR="$2"
-PROFILE_DIR="$BUILD_DIR/.profile.d"
-
-# Where to store the Pip download cache.
-CACHED_DIRS=(".heroku" ".bundle")
-PIP_DOWNLOAD_CACHE=${PIP_DOWNLOAD_CACHE:-$CACHE_DIR/pip_downloads}
-
-# Static configurations for virtualenv caches.
-LEGACY_VIRTUALENV_LOC="."
-MODERN_VIRTUALENV_LOC=".heroku/venv"
-LEGACY_VIRTUALENV_DIRS="bin include lib"
-LEGACY_VIRTUALENV_TRIGGER="lib/python2.7"
-PROFILE_PATH="$PROFILE_DIR/python.sh"
-
-# Python version. This will be used in the future to specify custom Pythons.
-PYTHON_VERSION="2.7.2"
-PYTHON_EXE="python2.7"
-
-# Time steps
-TIME_STEP_THRESHOLD=${TIME_STEP_THRESHOLD:-10}
-
-# Sanitizing environment variables.
-unset GIT_DIR PYTHONHOME PYTHONPATH LD_LIBRARY_PATH LIBRARY_PATH
-
-# We'll need to send these statics to other scripts we `source`.
-export PIP_DOWNLOAD_CACHE BUILD_DIR CACHE_DIR BIN_DIR PROFILE_PATH
+export BIN_DIR=$(cd $(dirname $0); pwd) # absolute path
+export ROOT_DIR=$(dirname $BIN_DIR)
+export BUILD_DIR="$1"
+export CACHE_DIR="$2"
 
 # Syntax sugar.
-source $BIN_DIR/utils
+source "$BIN_DIR/utils"
 
-# Prepend proper path buildpack use.
-export PYTHONUNBUFFERED=1
+# Directory Hacks for path consistiency.
+APP_DIR=${APP_DIR:-$HOME}
+TMP_APP_DIR="$CACHE_DIR/tmp_app_dir"
+
+# Copy Anvil app dir to temporary storage...
+mkdir -p "$TMP_APP_DIR"
+deep_mv "$APP_DIR" "$TMP_APP_DIR"
+
+# Copy Application code in.
+deep_mv "$BUILD_DIR" "$APP_DIR"
+
+# Set new context.
+ORIG_BUILD_DIR="$BUILD_DIR"
+BUILD_DIR="$APP_DIR"
+
+# Other configuration
+export PROFILE_DIR="$BUILD_DIR/.profile.d"
+export PROFILE_PATH="$PROFILE_DIR/python-extras.sh"
+export HEROKU_DIR=".heroku"
+export HEROKU_VENDOR_DIR="$HEROKU_DIR/vendor"
+export HEROKU_LIB_DIR="$HEROKU_VENDOR_DIR/lib"
 export LANG="en_US.UTF-8"
-export LIBRARY_PATH="/app/.heroku/vendor/lib"
-export LD_LIBRARY_PATH="/app/.heroku/vendor/lib"
+export TIME_STEP_THRESHOLD=${TIME_STEP_THRESHOLD:-10}
 
-# ## Build Time
-#
+# Where to store the Pip download cache.
+CACHED_DIRS=("$HEROKU_DIR" ".bundle")
 
 # Switch to the repo's context.
-cd $BUILD_DIR
+cd "$BUILD_DIR"
 
 # Experimental pre_compile hook.
-source $BIN_DIR/steps/hooks/pre_compile
-
-# ### Sanity Checks
-#
-# Just a little peace of mind.
-
-# If no requirements given, assume `setup.py develop`.
-if [ ! -f requirements.txt ]; then
-    puts_step "No requirements.txt provided; assuming dist package."
-    echo "-e ." > requirements.txt
-fi
+source "$BIN_DIR/steps/hooks/pre_compile"
 
 # ### The Cache
-mkdir -p $CACHE_DIR
-[ ! "$(ls -A $CACHE_DIR)" ] && export FRESH_APP=1
-
-# Nice defaults.
-LEGACY_VIRTUALENV=false
-VIRTUALENV_LOC=$MODERN_VIRTUALENV_LOC
-VIRTUALENV_DIRS=$MODERN_VIRTUALENV_LOC
-
-# Support "old-style" virtualenvs.
-if [ -d $CACHE_DIR/$LEGACY_VIRTUALENV_TRIGGER ]; then
-    LEGACY_VIRTUALENV=true
-    VIRTUALENV_LOC=$LEGACY_VIRTUALENV_LOC
-    VIRTUALENV_DIRS=$LEGACY_VIRTUALENV_DIRS
-    CACHED_DIRS=$LEGACY_VIRTUALENV_DIRS
-
-    # Warn for a checked-in virtualenv.
-    if [ -d "lib" ] || [ -d "bin" ]; then
-        puts_warn "You have a virtualenv checked in. You should ignore the appropriate paths in your repo. See http://devcenter.heroku.com/articles/gitignore for more info.";
-    fi
-
-    # Reject a conflicting checked-in virtualenv.
-    if [ -f "lib/python2.7" ]; then
-        puts_warn "Checked-in virtualenv conflict."
-        exit 1;
-    fi
-fi
+mkdir -p "$CACHE_DIR"
 
 # Restore old artifacts from the cache.
 for dir in $CACHED_DIRS; do
-    cp -R $CACHE_DIR/$dir . &> /dev/null || true
+    cp -R "$CACHE_DIR/$dir" . &> /dev/null || true
 done
 
-# Buildpack profile init script
-mkdir -p $(dirname $PROFILE_PATH)
-
-# ### virtualenv Setup
-#
-
-# Create the virtualenv. Rebuild if corrupt.
-# TODO: Bootstrap a bottled Python VM...
-
 set +e
-puts_step "Preparing Python interpreter ($PYTHON_VERSION)"
-puts_step "Preparing virtualenv version $(virtualenv --version)"
-
-# Try to create the virtualenv.
-OUT=$(virtualenv --python $PYTHON_EXE --distribute --never-download --prompt='(venv) ' $VIRTUALENV_LOC 2>&1)
-
-[ $? -ne 0 -o -n "$CLEAN_VIRTUALENV" ] && {
-    if [ -n "$CLEAN_VIRTUALENV" ]
-        then puts_warn "CLEAN_VIRTUALENV set, rebuilding virtualenv."
-        else puts_warn "virtualenv corrupt, rebuilding."
-    fi
-    for dir in $VIRTUALENV_DIRS; do
-        rm -fr $dir &> /dev/null || true
-    done
-    OUT=$(virtualenv --python $PYTHON_EXE --distribute --never-download  --prompt='(venv) ' $VIRTUALENV_LOC )
-}
-echo "$OUT" | sed -e 's/\.\.\.\+/.../g' | indent
-
+# Create set-aside `.heroku` folder.
+mkdir "$HEROKU_DIR" &> /dev/null
 set -e
+
+# Install specified Python version.
+source "$BIN_DIR/steps/python"
 
 # Pylibmc support.
 # See [`bin/steps/pylibmc`](pylibmc.html).
-source $BIN_DIR/steps/pylibmc
+if [ ! "$DISABLE_PYLIBMC" ]; then
+    source "$BIN_DIR/steps/pylibmc"
+fi
 
 # Install GEOS for GeoDjango
 if [ ! "$DISABLE_GEOS" ]; then
-    source $BIN_DIR/steps/geos
+    source "$BIN_DIR/steps/geos"
 fi
 
-# Activate the virtualenv.
-puts_step "Activating virtualenv"
-source $VIRTUALENV_LOC/bin/activate
-
-# Install Mercurial if it appears to be required.
-if (grep -Fiq "hg+" requirements.txt) then
-    pip install --use-mirrors mercurial | cleanup_pip | indent
-fi
-
-# Install dependencies with Pip.
-puts_step "Installing dependencies using pip version $(pip --version | awk '{print $2}')"
-pip install --use-mirrors -r requirements.txt --exists-action=w --src=./.heroku/srcmercurial | cleanup_pip | indent
+# Install Pip dependencies
+source "$BIN_DIR/steps/pip"
 
 # Install required gems if there's a Gemfile.
 if [ -f Gemfile.lock ] && [ ! "$DISABLE_BUNDLER" ]; then
-    source $BIN_DIR/steps/bundler
+    source "$BIN_DIR/steps/bundler"
 fi
 
 # Install required node packages if there's a package.json.
 if [ -f package.json ] && [ ! "$DISABLE_NPM" ]; then
-    source $BIN_DIR/steps/npm
+    source "$BIN_DIR/steps/npm"
 fi
 
 # Run collectstatic if this is a Django app.
 if [ -f manage.py ] && [ ! "$DISABLE_COLLECTSTATIC" ]; then
-    source $BIN_DIR/steps/collectstatic
+    source "$BIN_DIR/steps/collectstatic"
 fi
-
-# Make virtualenv's paths relative for portability.
-set +e
-OUT=$(virtualenv --python $PYTHON_EXE --relocatable $VIRTUALENV_LOC)
-[ $? -ne 0 ] && {
-    puts_warn "Error making virtualenv relocatable"
-    echo "$OUT" | indent
-    exit 1
-}
-set -e
 
 # ### Finalize
 #
 
 # Store new artifacts in cache.
 for dir in $CACHED_DIRS; do
-    rm -rf $CACHE_DIR/$dir
-    cp -R $dir $CACHE_DIR/
+    rm -rf "$CACHE_DIR/$dir"
+    cp -R "$dir" "$CACHE_DIR/"
 done
 
 # Set context environment variables.
-set_env_override PATH '$HOME/.heroku/venv/bin:$PATH'
-set_env_default PYTHONUNBUFFERED true
-set_env_default LIBRARY_PATH "/app/.heroku/vendor/lib"
-set_env_default LD_LIBRARY_PATH "/app/.heroku/vendor/lib"
-set_env_default LANG "en_US.UTF-8"
-set_env_default PYTHONHASHSEED "random"
-set_env_default PYTHONHOME "/app/.heroku/venv/"
-set_env_default PYTHONPATH "/app/"
-
-# ### Fin.
+mkdir -p $(dirname $PROFILE_PATH)
+set_env_default LIBRARY_PATH "$(app_path $HEROKU_LIB_DIR)"
+set_env_default LD_LIBRARY_PATH "$(app_path $HEROKU_LIB_DIR)"
+set_env_default LANG "$LANG"
 
 # Experimental post_compile hook.
-source $BIN_DIR/steps/hooks/post_compile
+source "$BIN_DIR/steps/hooks/post_compile"
+
+deep_mv "$BUILD_DIR" "$ORIG_BUILD_DIR"
+deep_mv "$TMP_APP_DIR" "$APP_DIR"

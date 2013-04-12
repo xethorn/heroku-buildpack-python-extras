@@ -5,30 +5,13 @@ BIN_DIR=$(cd $(dirname $0); pwd) # absolute path
 BUILD_DIR=$1
 NAME=$($BIN_DIR/detect $BUILD_DIR) || exit 1
 
+# Add configuration for Django projects
+[ -f "$BUILD_DIR/manage.py" ] || exit 0
+
 cat <<EOF
 ---
-config_vars:
-  PATH: /app/.heroku/venv/bin:/app/.heroku/ruby/bin:/app/.heroku/node/bin:node_modules/.bin:/app/.heroku/ruby/bundle/ruby/1.9.1/bin:/bin:/usr/local/bin:/usr/bin
-  LIBRARY_PATH: /app/.heroku/vendor/lib
-  LD_LIBRARY_PATH: /app/.heroku/vendor/lib
-  GEOS_LIBRARY_PATH: /app/.heroku/vendor/lib/libgeos_c.so
-  PYTHONHOME: /app/.heroku/venv/
-  PYTHONPATH: /app/
-  PYTHONUNBUFFERED: true
-  PYTHONHASHSEED: random
-  GEM_PATH: /app/.heroku/ruby/bundle/ruby/1.9.1
-  GEM_HOME: /app/.heroku/ruby/bundle/ruby/1.9.1
-  LANG: en_US.UTF-8
-EOF
-
-# Add configuration for Django projects
-[ -f $BUILD_DIR/manage.py ] || exit 0
-
-cat <<EOF
-
 addons:
-  shared-database: 5mb
-
+  - shared-database:5mb
 default_process_types:
   web: python manage.py runserver 0.0.0.0:\$PORT --noreload
 EOF

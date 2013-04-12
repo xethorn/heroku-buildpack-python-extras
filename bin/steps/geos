@@ -1,13 +1,20 @@
 #!/usr/bin/env bash
 
-GEOS_DIR="$BUILD_DIR/.heroku/vendor"
+GEOS_DIR="$HEROKU_VENDOR_DIR"
 GEOS_VERSION=${GEOS_VERSION:-"3.3.5"}
+GEOS_LIB_PATH="$GEOS_DIR/lib/libgeos_c.so"
 GEOS_PROFILE_PATH="$PROFILE_DIR/geos.sh"
 
+export GEOS_LIBRARY_PATH="$(build_path $GEOS_LIB_PATH)"
+
 # Download and vendored GEOS
-puts_step "Installing GEOS version $GEOS_VERSION"
-download_package heroku-geodjango-libs geos "$GEOS_VERSION" "$GEOS_DIR"
+if [ -f "$GEOS_LIB_PATH" ]; then
+    puts_step "Using GEOS ($GEOS_VERSION)"
+else
+    puts_step "Installing GEOS ($GEOS_VERSION)"
+    download_s3_package heroku-geodjango-libs geos "$GEOS_VERSION" "$GEOS_DIR"
+fi
 
 # Setup runtime env
 mkdir -p $(dirname $GEOS_PROFILE_PATH)
-set_env_default GEOS_LIBRARY_PATH "$GEOS_DIR/lib/libgeos_c.so" "$GEOS_PROFILE_PATH"
+set_env_default GEOS_LIBRARY_PATH "$(app_path $GEOS_LIB_PATH)" "$GEOS_PROFILE_PATH"
